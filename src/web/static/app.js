@@ -10,7 +10,6 @@
     { campo: "codigo", etiqueta: "Código" },
     { campo: "descripcion", etiqueta: "Descripción" },
     { campo: "stock_bultos", etiqueta: "Stock (bultos)", num: true },
-    { campo: "venta_unidades_7d", etiqueta: "Venta 7d (uni)", num: true },
     { campo: "venta_promedio_bulto", etiqueta: "Venta prom. (bultos)", num: true },
     { campo: "dias_stock", etiqueta: "Días de stock", num: true },
     { campo: "transito_bultos", etiqueta: "Tránsito (bultos)", num: true },
@@ -167,8 +166,6 @@
       case "venta_promedio_bulto":
       case "transito_bultos":
         return fmtDosDecimales.format(art[campo]);
-      case "venta_unidades_7d":
-        return fmtEntero.format(art[campo]);
       case "dias_stock":
         return formatearDiasStock(art.dias_stock, art.stock_bultos);
       case "dias_stock_c_transito":
@@ -311,7 +308,7 @@
     const filas = listaVisible();
 
     if (filas.length === 0) {
-      cuerpoTabla.innerHTML = '<tr><td colspan="9">No hay artículos que coincidan con los filtros.</td></tr>';
+      cuerpoTabla.innerHTML = '<tr><td colspan="8">No hay artículos que coincidan con los filtros.</td></tr>';
     } else {
       cuerpoTabla.innerHTML = filas.map((art) => {
         const clase = claseSemaforo(art);
@@ -322,7 +319,6 @@
         <td>${art.codigo}</td>
         <td title="${escaparHtml(art.descripcion)}">${art.descripcion}</td>
         <td class="num">${valorCeldaTexto(art, "stock_bultos")}</td>
-        <td class="num">${valorCeldaTexto(art, "venta_unidades_7d")}</td>
         <td class="num">${valorCeldaTexto(art, "venta_promedio_bulto")}</td>
         <td class="num">${celdaDiasStock(art)}${icono}</td>
         <td class="num">${valorCeldaTexto(art, "transito_bultos")}</td>
@@ -487,6 +483,6 @@
 
   cargarTodo().catch((err) => {
     mostrarToast("No se pudieron cargar los datos: " + err.message, "error");
-    cuerpoTabla.innerHTML = '<tr><td colspan="9">No se pudieron cargar los artículos.</td></tr>';
+    cuerpoTabla.innerHTML = '<tr><td colspan="8">No se pudieron cargar los artículos.</td></tr>';
   });
 })();
