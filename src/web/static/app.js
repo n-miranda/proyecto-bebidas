@@ -135,7 +135,7 @@
   });
 
   const multiDeposito = crearMultiSelect("multiselect-deposito", () => render());
-  const multiRubro = crearMultiSelect("multiselect-rubro", () => render());
+  const multiCluster = crearMultiSelect("multiselect-cluster", () => render());
 
   function formatearDiasStock(valor, stockMasTransito) {
     if (valor === null || valor === undefined) {
@@ -191,9 +191,13 @@
 
   function poblarFiltros() {
     const depositos = [...new Set(articulos.map((a) => a.deposito))].sort((a, b) => a.localeCompare(b, "es"));
-    const rubros = [...new Set(articulos.map((a) => a.rubro))].sort((a, b) => a.localeCompare(b, "es"));
     multiDeposito.setOpciones(depositos);
-    multiRubro.setOpciones(rubros);
+    // Cluster: todavia no hay ese dato cargado en los articulos (pedido del
+    // usuario, 2026-09-17) -- el filtro queda armado pero sin opciones hasta
+    // que exista una fuente real. Ver el "size > 0" en filtrarSinEstado: con
+    // cero opciones el filtro no excluye nada (si no, un Set vacio bloquearia
+    // todas las filas).
+    multiCluster.setOpciones([]);
     contadorSinClasificarEl.textContent = fmtEntero.format(
       articulos.filter((a) => a.sin_clasificar).length
     );
@@ -201,20 +205,20 @@
 
   let filtroEstado = null; // null | "semaforo-rojo" | "semaforo-amarillo" | "semaforo-verde" | "semaforo-sobrestock"
 
-  // Filtros "de contexto" (deposito/rubro/buscador), sin el filtro de estado -
+  // Filtros "de contexto" (deposito/cluster/buscador), sin el filtro de estado -
   // los KPI se calculan sobre esto para que sigan mostrando el desglose
   // completo aunque haya un estado seleccionado (si no, al tocar "Rojo" el
   // resto de los KPI caerian a 0 y no se podria volver a elegir otro estado).
   function filtrarSinEstado(lista) {
     const depositos = multiDeposito.getSeleccion();
-    const rubros = multiRubro.getSeleccion();
+    const clusters = multiCluster.getSeleccion();
     const busqueda = inputBuscador.value.trim().toLowerCase();
     const soloSinClasificar = checkSinClasificar.checked;
 
     return lista.filter((a) => {
       if (soloSinClasificar && !a.sin_clasificar) return false;
       if (!depositos.has(a.deposito)) return false;
-      if (!rubros.has(a.rubro)) return false;
+      if (clusters.size > 0 && !clusters.has(a.cluster)) return false;
       if (busqueda) {
         const enCodigo = a.codigo.toLowerCase().includes(busqueda);
         const enDescripcion = a.descripcion.toLowerCase().includes(busqueda);
