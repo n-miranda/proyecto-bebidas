@@ -1,0 +1,14 @@
+# El build de Vercel solo necesita api/, public/, config/ y data/ (ver
+# README, seccion "Sitio publicado (Vercel)"). Todo lo demas es la app local
+# (Flask) y sus datos de origen -- src/main.py en particular confundia al
+# detector de funciones Python de Vercel (parecia un entrypoint suelto sin
+# serlo), por eso se excluye toda la carpeta.
+src/
+STOCK/
+VENTAS/
+TRANSITO/
+logs/
+salida/
+requirements.txt
+README.md
+CLAUDE.md
