@@ -1,0 +1,93 @@
+{
+  "_nota": "Por pedido del usuario (2026-09-17), PROYECTO BEBIDAS sigue usando por el momento las mismas bases (stock.xlsx, rubros.xlsx, VENTAS.xlsx, productos.xlsx) que UNIFICADOR_STOCK. Este mapeo es el confirmado contra esos archivos reales — sigue aplicando tal cual. Si en el futuro se reemplazan las bases por fuentes propias de bebidas, hay que rehacer el Paso 0 de Reconocimiento y reescribir este archivo.",
+
+  "stock": {
+    "_nota": "Cambio 2026-09-17 (segundo cambio del dia) a pedido del usuario: se reemplazo el export diario de STOCK DIARIO\\STOCK_TRC_P_DD-MM.xlsx (TR2019/TRC2019, Total Refrigerados) por un archivo manual propio de bebidas: D:\\01-Usuario\\Downloads\\stock_bebidas.xlsx. Es la primera fuente de la app con codigos de articulo REALES de bebidas (ej. 7038 BRAHMA, 1413 GATORADE) -- ya no comparte universo de codigos con VENTAS.xlsx/maestro de productos/rubros, que siguen siendo de Total Refrigerados. Por eso, hasta que se reemplacen tambien esas fuentes, todo articulo de bebidas sale 'SIN CLASIFICAR' (sin proveedor/rubro/UxB) y con venta 7d = 0 (sin dato de venta que matchee) -- es esperado, no un bug.",
+    "archivo": "D:\\01-Usuario\\Downloads\\stock_bebidas.xlsx (ruta fija, no se busca 'el mas reciente'; se pisa el mismo nombre cuando el usuario vuelve a descargarlo)",
+    "hojas_usadas": ["OB", "SV", "PR", "TC"],
+    "hojas_ignoradas": ["General", "STOCK", "JA", "AP", "VS", "PAR", "VIC", "Resumen - Stock", "Indicadores", "Stock Min 1994", "Stock Min Center", "Stock Min (KG)", "Venta por bultos", "Bultos por dia", "Dias de piso", "HL", "Capacidad de Almacen", "Areas", "Migrar", "Articulos", "Criticos"],
+    "estructura_por_hoja": "Cada una de las 4 pestañas usadas trae DOS bloques de columnas lado a lado -- 'DISPONIBLE' (A-D) y 'FISICO' (F-I) -- se usa SOLO 'DISPONIBLE', a pedido del usuario. Fila 1 = subtitulo de bloque, fila 2 = encabezados reales, datos desde fila 3.",
+    "columnas": {
+      "codigo": { "posicion": 1, "letra": "A", "header_original": "Art\u00edculo" },
+      "descripcion": { "posicion": 2, "letra": "B", "header_original": "Descripci\u00f3n Art\u00edculo" },
+      "stock_unidades": { "posicion": 3, "letra": "C", "header_original": "Cantidad" },
+      "deposito": { "origen": "nombre de la pestaña, no una columna", "valores": ["OB", "SV", "PR", "TC"] }
+    },
+    "columnas_no_usadas": {
+      "D": "Unids (vacia en la muestra)",
+      "F-I": "bloque FISICO (Articulo/Descripcion/Cantidad/Unids duplicado) -- no se usa, a pedido del usuario",
+      "K-O": "Venta Prom Pedido / Cod / Descripcion / Venta / ABC -- otro dato (venta promedio por pedido), no se usa aca"
+    },
+    "fila_encabezado": 2,
+    "fila_datos_desde": 3,
+    "filas_totales_muestra_17_09": 833,
+    "codigos_unicos_muestra_17_09": 330,
+    "filas_por_deposito_muestra_17_09": { "OB": 267, "SV": 165, "PR": 167, "TC": 234 },
+    "codigos_en_mas_de_un_deposito_muestra_17_09": 224,
+    "aviso": "Un mismo codigo puede tener una fila por deposito (OB/SV/PR/TC). El consolidador arma una fila por (codigo, deposito); venta 7d/promedio/dias de stock/transito no estan discriminados por deposito, se repite el total del articulo en cada fila."
+  },
+
+  "rubros": {
+    "carpeta": "STOCK",
+    "archivo": "rubros.xlsx",
+    "hoja": "Hoja1",
+    "columnas": {
+      "codigo": { "posicion": 1, "letra": "A", "header_original": "Articulo" },
+      "descripcion": { "posicion": 2, "letra": "B", "header_original": "Descripcion articulo" },
+      "rubro": { "posicion": 3, "letra": "C", "header_original": "RUBRO" }
+    },
+    "fila_encabezado": 1,
+    "fila_datos_desde": 2,
+    "filas_totales": 2421,
+    "cobertura_rubro": "2387/2421 (98.6%) con rubro cargado",
+    "aviso_encoding": "Valores de RUBRO con mojibake en acentos (ej. 'L\u00c1CTEOS' vs 'LACTEOS'); normalizar al leer.",
+    "aviso_semantico": "La columna RUBRO mezcla categorias genericas (PASTAS, PANES, ALFAJORES) con nombres de proveedor (GEORGALOS, TIMBO, MOLINOS, CALSA). Confirmado con el usuario: se usa tal cual, sin reclasificar."
+  },
+
+  "ventas": {
+    "carpeta": "VENTAS",
+    "archivo": "VENTAS.xlsx",
+    "hoja": "aexcel",
+    "columnas": {
+      "fecha": { "posicion": 1, "letra": "A", "header_original": "Descripci\u00f3n Periodo" },
+      "codigo": { "posicion": 2, "letra": "B", "header_original": "Codigo" },
+      "descripcion": { "posicion": 3, "letra": "C", "header_original": "Descripcion" },
+      "unidades_vendidas": { "posicion": 4, "letra": "D", "header_original": "un vendidas" }
+    },
+    "fila_encabezado": 1,
+    "fila_datos_desde": 2,
+    "filas_totales": 24682,
+    "fecha_en_archivo": true,
+    "aviso_fecha": "La fecha SI viene en el archivo (columna A, tipo datetime), un unico archivo con multiples dias (13 dias detectados: 2026-08-18 a 2026-09-01). No hace falta deducir la fecha del nombre de archivo como planteaba la hipotesis original de CLAUDE.md 4.2 -- salvo que en producción vuelvan a repartir las ventas en un archivo por dia, hay que soportar ambos casos.",
+    "aviso_signos": "22418 filas positivas (ventas), 2244 negativas (devoluciones/notas de credito, se restan) y 20 en cero, sobre 24682 filas totales. Confirma la regla 4.2 de CLAUDE.md."
+  },
+
+  "maestro_productos": {
+    "ruta_absoluta": "C:\\integracion_stock\\auxiliares\\productos.xlsx",
+    "hoja": "Codigos",
+    "columnas": {
+      "codigo": { "posicion": 1, "letra": "A", "header_original": "CODIGO_CHESS PRODUCTOS" },
+      "descripcion": { "posicion": 2, "letra": "B", "header_original": "Descripcion" },
+      "proveedor": { "posicion": 5, "letra": "E", "header_original": "PROVEEDOR CHESS" },
+      "unidades_por_bulto": { "posicion": 6, "letra": "F", "header_original": "unidad por bulto" }
+    },
+    "fila_encabezado": 1,
+    "fila_datos_desde": 2,
+    "filas_totales": 590,
+    "codigos_unicos": 587,
+    "codigos_duplicados": 2,
+    "confirmado_por_usuario": "Se usa este archivo (compartido con D:\\AUTOMATIZACION_PEDIDOS_CONTROL) como maestro de proveedor y unidades por bulto.",
+    "cobertura_contra_stock": "583/854 codigos de stock.xlsx matchean (68.2%). 271 huerfanos sin proveedor/UxB -> se aplican las reglas de la seccion 4.5 de CLAUDE.md (unidades_por_bulto=1, proveedor='SIN CLASIFICAR', reporte de inconsistencias)."
+  },
+
+  "transito": {
+    "carpeta": "TRANSITO",
+    "estado": "omitido a pedido del usuario (2026-09-01). Se implementa como fuente stub: siempre devuelve transito=0 con aviso visible en la app. Retomar en Fase 4 (ver seccion 13 de CLAUDE.md) cuando se defina el origen real de los pedidos pendientes."
+  },
+
+  "normalizacion_codigo": {
+    "tipo_detectado": "entero (int) en las 4 fuentes: stock.xlsx, rubros.xlsx, VENTAS.xlsx y productos.xlsx",
+    "ceros_a_la_izquierda": "no se observaron en la muestra revisada",
+    "recomendacion": "normalizar_codigo() debe convertir todo a int (o str sin ceros de relleno) de forma consistente antes de cualquier cruce."
+  }
+}

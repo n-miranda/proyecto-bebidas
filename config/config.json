@@ -1,0 +1,38 @@
+{
+  "rutas": {
+    "stock_carpeta": "STOCK",
+    "stock_archivo": "stock.xlsx",
+    "rubros_archivo": "rubros.xlsx",
+    "stock_bebidas_archivo": "D:\\01-Usuario\\Downloads\\stock_bebidas.xlsx",
+    "ventas_carpeta": "VENTAS",
+    "transito_carpeta": "TRANSITO",
+    "ingresos_archivo": "INGRESOS.xlsx",
+    "supply_pedidos_carpeta": "D:\\01-Usuario\\Desktop\\Supply\\Posadas\\2. Pedidos Posadas",
+    "maestro_productos": "C:\\integracion_stock\\auxiliares\\productos.xlsx",
+    "salida": "salida",
+    "logs": "logs"
+  },
+  "calculo": {
+    "ventana_dias_venta": 7,
+    "incluir_dia_actual": true,
+    "contar_dias_turisticos": true,
+    "redondeo_decimales": 2
+  },
+  "transito": {
+    "dias_vencimiento_pendiente": 30
+  },
+  "semaforo_dias_stock": {
+    "rojo_hasta": 3,
+    "amarillo_hasta": 7,
+    "verde_hasta": 20
+  },
+  "proveedores_excluidos": {
+    "_nota": "Articulos de estos proveedores no aparecen en la web, en ninguna carga (pedido del usuario, 2026-09-10). Para volver a mostrarlos, sacar la entrada de esta lista.",
+    "lista": ["BIGAR SA", "MOLINOS RIO DE LA PLATA S.A."]
+  },
+  "semaforo_relativo_stock_seguridad": {
+    "_nota": "Cuando el codigo tiene St Seg/D St conocido (extraido de los pedidos reales), reemplaza al umbral fijo de arriba: rojo < 1x St Seg, amarillo entre 1x y amarillo_hasta_multiplo, verde entre eso y verde_hasta_multiplo, sobrestock mas alla. Confirmado con el usuario (2026-09-08).",
+    "amarillo_hasta_multiplo": 2,
+    "verde_hasta_multiplo": 5
+  }
+}

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stock General — Bebidas</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232a78d6'/%3E%3Cpath d='M9 12l7-4 7 4v8l-7 4-7-4z' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linejoin='round'/%3E%3Cpath d='M9 12l7 4 7-4M16 16v8' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/static/estilos.css">
+</head>
+<body>
+  <header class="barra-superior">
+    <div class="marca">
+      <span class="marca-empresa">Bebidas</span>
+      <h1>Stock General</h1>
+    </div>
+    <div class="info-actualizacion">
+      <span id="fecha-actualizacion">Cargando...</span>
+    </div>
+  </header>
+
+  <div class="barra-filtros">
+    <div class="filtro filtro-buscador">
+      <label for="filtro-buscador">Buscar</label>
+      <input id="filtro-buscador" type="text" placeholder="Código o descripción...">
+    </div>
+  </div>
+
+  <main>
+    <table id="tabla-stock-general">
+      <thead id="encabezado-tabla">
+      </thead>
+      <tbody id="cuerpo-tabla">
+        <tr><td>Cargando artículos...</td></tr>
+      </tbody>
+    </table>
+  </main>
+
+  <footer id="totales" class="totales"></footer>
+
+  <script src="/static/stock_general.js"></script>
+</body>
+</html>

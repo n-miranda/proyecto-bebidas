@@ -1,0 +1,107 @@
+(() => {
+  "use strict";
+
+  const fmtDosDecimales = new Intl.NumberFormat("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  const encabezadoTabla = document.getElementById("encabezado-tabla");
+  const cuerpoTabla = document.getElementById("cuerpo-tabla");
+  const fechaActualizacionEl = document.getElementById("fecha-actualizacion");
+  const totalesEl = document.getElementById("totales");
+  const inputBuscador = document.getElementById("filtro-buscador");
+
+  let todasLasFilas = [];
+  let depositos = [];
+
+  function escaparHtml(texto) {
+    return String(texto)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  // Un mismo codigo puede traer una fila por deposito (ver consolidador.py):
+  // se agrupa por codigo y el stock de cada deposito pasa a ser una columna
+  // propia, en vez de una fila aparte -- para que los depositos se vean
+  // uno al lado del otro.
+  function agruparPorCodigo(articulos) {
+    const porCodigo = new Map();
+    for (const art of articulos) {
+      if (art.deposito === "SIN DEPOSITO") continue;
+      if (!porCodigo.has(art.codigo)) {
+        porCodigo.set(art.codigo, { codigo: art.codigo, descripcion: art.descripcion, stockPorDeposito: {} });
+      }
+      porCodigo.get(art.codigo).stockPorDeposito[art.deposito] = art.stock_bultos;
+    }
+    return [...porCodigo.values()].sort((a, b) => Number(a.codigo) - Number(b.codigo));
+  }
+
+  function depositosPresentes(filas) {
+    const set = new Set();
+    for (const fila of filas) {
+      for (const deposito of Object.keys(fila.stockPorDeposito)) set.add(deposito);
+    }
+    return [...set].sort((a, b) => a.localeCompare(b, "es"));
+  }
+
+  function filasFiltradas() {
+    const busqueda = inputBuscador.value.trim().toLowerCase();
+    if (!busqueda) return todasLasFilas;
+    return todasLasFilas.filter((fila) =>
+      fila.codigo.toLowerCase().includes(busqueda) ||
+      fila.descripcion.toLowerCase().includes(busqueda)
+    );
+  }
+
+  function renderEncabezado() {
+    encabezadoTabla.innerHTML = `
+      <tr>
+        <th>Código</th>
+        <th>Descripción</th>
+        ${depositos.map((d) => `<th class="num">${escaparHtml(d)} (bultos)</th>`).join("")}
+      </tr>`;
+  }
+
+  function render() {
+    const filas = filasFiltradas();
+
+    if (filas.length === 0) {
+      cuerpoTabla.innerHTML = `<tr><td colspan="${2 + depositos.length}">No hay artículos que coincidan con la búsqueda.</td></tr>`;
+    } else {
+      cuerpoTabla.innerHTML = filas.map((fila) => `
+      <tr>
+        <td>${fila.codigo}</td>
+        <td title="${escaparHtml(fila.descripcion)}">${fila.descripcion}</td>
+        ${depositos.map((d) => `<td class="num">${fmtDosDecimales.format(fila.stockPorDeposito[d] ?? 0)}</td>`).join("")}
+      </tr>`).join("");
+    }
+
+    totalesEl.textContent = `${filas.length} de ${todasLasFilas.length} artículos`;
+  }
+
+  inputBuscador.addEventListener("input", render);
+
+  async function cargarTodo() {
+    const [respStock, respMeta] = await Promise.all([
+      fetch("/api/stock"),
+      fetch("/api/meta"),
+    ]);
+    if (!respStock.ok || !respMeta.ok) {
+      throw new Error("No se pudieron cargar los datos.");
+    }
+    const articulos = await respStock.json();
+    const { meta } = await respMeta.json();
+
+    const fecha = new Date(meta.fecha_actualizacion + "T00:00:00");
+    fechaActualizacionEl.textContent = `Actualizado: ${fecha.toLocaleDateString("es-AR")}`;
+
+    todasLasFilas = agruparPorCodigo(articulos);
+    depositos = depositosPresentes(todasLasFilas);
+    renderEncabezado();
+    render();
+  }
+
+  cargarTodo().catch((err) => {
+    cuerpoTabla.innerHTML = `<tr><td>No se pudieron cargar los artículos: ${err.message}</td></tr>`;
+  });
+})();

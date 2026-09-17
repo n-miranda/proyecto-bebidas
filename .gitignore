@@ -1,0 +1,18 @@
+# Bases de datos de origen (Excel con informacion real de stock/ventas/negocio):
+# nunca se suben al repo, ni siquiera privado. La app local las lee directo
+# de estas carpetas; el sitio publicado usa una foto fija en data/snapshot.json.
+/STOCK/
+/VENTAS/
+/TRANSITO/
+
+# Generados en cada corrida local -- no son fuente de verdad, se regeneran.
+/salida/
+/logs/
+
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Vercel
+.vercel/

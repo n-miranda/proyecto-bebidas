@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Unificador de Stock — Bebidas</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232a78d6'/%3E%3Cpath d='M9 12l7-4 7 4v8l-7 4-7-4z' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linejoin='round'/%3E%3Cpath d='M9 12l7 4 7-4M16 16v8' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/static/estilos.css">
+</head>
+<body>
+  <header class="barra-superior">
+    <div class="marca">
+      <span class="marca-empresa">Bebidas</span>
+      <h1>Unificador de Stock</h1>
+    </div>
+    <div class="info-actualizacion">
+      <span id="fecha-actualizacion">Cargando...</span>
+      <span id="ventana-ventas" class="ventana-ventas"></span>
+      <span class="etiqueta-solo-lectura" title="Este sitio muestra una foto fija publicada manualmente, no procesa Excel en vivo">Solo lectura</span>
+    </div>
+  </header>
+
+  <div id="avisos" class="avisos" hidden></div>
+
+  <section class="kpis" id="kpis" aria-label="Resumen de stock (click para filtrar)">
+    <div class="kpi kpi-total" data-estado="" role="button" tabindex="0">
+      <svg class="kpi-icono" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8L12 3 3 8v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/></svg>
+      <div class="kpi-texto">
+        <span class="kpi-valor" id="kpi-total">0</span>
+        <span class="kpi-etiqueta">Artículos filtrados</span>
+      </div>
+    </div>
+    <div class="kpi kpi-critico" data-estado="semaforo-rojo" role="button" tabindex="0">
+      <svg class="kpi-icono" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="7" x2="12" y2="13"/><line x1="12" y1="16.5" x2="12" y2="16.51"/></svg>
+      <div class="kpi-texto">
+        <span class="kpi-valor" id="kpi-rojo">0</span>
+        <span class="kpi-etiqueta">Riesgo de quiebre</span>
+      </div>
+    </div>
+    <div class="kpi kpi-atencion" data-estado="semaforo-amarillo" role="button" tabindex="0">
+      <svg class="kpi-icono" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5L21.5 20H2.5z"/><line x1="12" y1="9.5" x2="12" y2="14"/><line x1="12" y1="16.8" x2="12" y2="16.81"/></svg>
+      <div class="kpi-texto">
+        <span class="kpi-valor" id="kpi-amarillo">0</span>
+        <span class="kpi-etiqueta">Atención</span>
+      </div>
+    </div>
+    <div class="kpi kpi-normal" data-estado="semaforo-verde" role="button" tabindex="0">
+      <svg class="kpi-icono" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5 5.5-6"/></svg>
+      <div class="kpi-texto">
+        <span class="kpi-valor" id="kpi-verde">0</span>
+        <span class="kpi-etiqueta">Normal</span>
+      </div>
+    </div>
+    <div class="kpi kpi-sobrestock" data-estado="semaforo-sobrestock" role="button" tabindex="0">
+      <svg class="kpi-icono" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 17 9 11 13 15 21 6"/><polyline points="15 6 21 6 21 12"/></svg>
+      <div class="kpi-texto">
+        <span class="kpi-valor" id="kpi-sobrestock">0</span>
+        <span class="kpi-etiqueta">Sobrestock</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="barra-filtros">
+    <div class="filtro">
+      <label>Depósito</label>
+      <div class="multiselect" id="multiselect-deposito">
+        <button type="button" class="multiselect-boton">Todos</button>
+        <div class="multiselect-panel" hidden>
+          <div class="multiselect-acciones">
+            <button type="button" data-accion="todos">Marcar todos</button>
+            <button type="button" data-accion="ninguno">Desmarcar todos</button>
+          </div>
+          <div class="multiselect-opciones"></div>
+        </div>
+      </div>
+    </div>
+    <div class="filtro">
+      <label>Rubro</label>
+      <div class="multiselect" id="multiselect-rubro">
+        <button type="button" class="multiselect-boton">Todos</button>
+        <div class="multiselect-panel" hidden>
+          <div class="multiselect-acciones">
+            <button type="button" data-accion="todos">Marcar todos</button>
+            <button type="button" data-accion="ninguno">Desmarcar todos</button>
+          </div>
+          <div class="multiselect-opciones"></div>
+        </div>
+      </div>
+    </div>
+    <div class="filtro filtro-buscador">
+      <label for="filtro-buscador">Buscar</label>
+      <input id="filtro-buscador" type="text" placeholder="Código o descripción...">
+    </div>
+    <div class="filtro filtro-check">
+      <label>
+        <input id="filtro-sin-clasificar" type="checkbox">
+        Solo sin clasificar (<span id="contador-sin-clasificar">0</span>)
+      </label>
+    </div>
+    <div class="filtro-acciones">
+      <button id="btn-stock-general" type="button">Stock general</button>
+      <button id="btn-exportar" type="button">Exportar CSV</button>
+    </div>
+  </div>
+
+  <main>
+    <table id="tabla-stock">
+      <thead>
+        <tr>
+          <th data-campo="deposito">Depósito</th>
+          <th data-campo="codigo">Código</th>
+          <th data-campo="descripcion">Descripción</th>
+          <th data-campo="stock_bultos" class="num">Stock (bultos)</th>
+          <th data-campo="venta_unidades_7d" class="num">Venta 7d (uni)</th>
+          <th data-campo="venta_promedio_bulto" class="num">Venta prom. (bultos)</th>
+          <th data-campo="dias_stock" class="num">Días de stock</th>
+          <th data-campo="transito_bultos" class="num">Tránsito (bultos)</th>
+          <th data-campo="dias_stock_c_transito" class="num">Días stock c/tránsito</th>
+        </tr>
+      </thead>
+      <tbody id="cuerpo-tabla">
+        <tr><td colspan="9">Cargando artículos...</td></tr>
+      </tbody>
+    </table>
+  </main>
+
+  <footer id="totales" class="totales"></footer>
+
+  <div id="toast" class="toast" role="status" hidden></div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
