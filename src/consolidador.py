@@ -1,11 +1,13 @@
 """Arma el DataFrame canonico final (CLAUDE.md seccion 4.5).
 
-Universo de articulos = union de los codigos que aparecen en STOCK y en
-VENTAS (dentro de la ventana de 7 dias de venta): un articulo con stock pero
-sin ventas recientes, o con ventas recientes pero stock en 0, debe verse
-igual. Los codigos que no matchean contra el maestro de productos (proveedor
-/ UxB / rubro) no se descartan: quedan con los valores por defecto de la
-seccion 4.5 y se listan en el reporte de inconsistencias.
+Universo de articulos = SOLO los codigos de stock_bebidas.xlsx (pedido del
+usuario, 2026-09-18): VENTAS.xlsx y el transito siguen siendo de otro
+catalogo (Total Refrigerados, heredado de UNIFICADOR_STOCK) y no aportan
+articulos propios, solo datos (venta 7d, transito) para los codigos que SI
+estan en el stock de bebidas -- si no matchean, esos campos quedan en 0.
+Los codigos de stock que no matchean contra el maestro de productos
+(proveedor / UxB / rubro) no se descartan: quedan con los valores por
+defecto de la seccion 4.5 y se listan en el reporte de inconsistencias.
 """
 from __future__ import annotations
 
@@ -23,7 +25,7 @@ from src.fuentes.excel_maestro import (
     RUBRO_SIN_CLASIFICAR,
     ExcelMaestroProductos,
 )
-from src.fuentes.excel_stock import DEPOSITO_SIN_CLASIFICAR, ExcelStock
+from src.fuentes.excel_stock import ExcelStock
 from src.fuentes.excel_transito import TransitoSupplyIngresos
 from src.fuentes.excel_ventas import ExcelVentas
 
@@ -113,30 +115,14 @@ def consolidar(config: Config, fecha_referencia: date | None = None) -> Resultad
         if not transito_df.empty else pd.DataFrame(columns=["codigo", "transito_unidades"])
     )
 
-    # stock_df puede traer el mismo codigo dos veces (una fila por deposito,
-    # ver excel_stock.py). Se arma el universo a partir de esas filas tal
-    # cual -- cada (codigo, deposito) es una fila propia -- y se agregan
-    # como filas sueltas los codigos que solo aparecen en ventas o transito
-    # (sin stock en ningun deposito), con deposito = DEPOSITO_SIN_CLASIFICAR.
-    codigos_en_stock = set(stock_df["codigo"])
-    codigos_solo_venta_o_transito = (
-        pd.Index(ventas_agg["codigo"]).union(pd.Index(transito_agg["codigo"])).unique()
-    )
-    codigos_faltantes = [c for c in codigos_solo_venta_o_transito if c not in codigos_en_stock]
-
-    df = stock_df.copy()
-    if codigos_faltantes:
-        df = pd.concat([
-            df,
-            pd.DataFrame({
-                "codigo": codigos_faltantes,
-                "descripcion": None,
-                "stock_unidades": 0.0,
-                "deposito": DEPOSITO_SIN_CLASIFICAR,
-            }),
-        ], ignore_index=True)
-
-    df = df.merge(maestro_df, on="codigo", how="left")
+    # Universo de articulos = SOLO los codigos de stock_bebidas.xlsx (pedido
+    # del usuario, 2026-09-18): antes se agregaban ademas los codigos que
+    # aparecian unicamente en VENTAS.xlsx o transito, pero esas dos fuentes
+    # siguen siendo de otro catalogo (Total Refrigerados) -- agregarlos
+    # mostraba articulos ajenos a bebidas. stock_df puede traer el mismo
+    # codigo dos veces (una fila por deposito, ver excel_stock.py); cada
+    # (codigo, deposito) queda como su propia fila.
+    df = stock_df.merge(maestro_df, on="codigo", how="left")
     df = df.merge(ventas_agg, on="codigo", how="left")
     df = df.merge(transito_agg, on="codigo", how="left")
 
@@ -181,8 +167,6 @@ def consolidar(config: Config, fecha_referencia: date | None = None) -> Resultad
         if pd.isna(row["unidades_por_bulto"]) or not row["unidades_por_bulto"]:
             df.at[idx, "unidades_por_bulto"] = 1.0
             motivos.append("sin unidades por bulto (se usa 1)")
-        if row["deposito"] == DEPOSITO_SIN_CLASIFICAR:
-            motivos.append("sin stock en ningun deposito (solo aparece en ventas o transito)")
         if not tiene_venta_promedio[idx]:
             motivos.append("sin venta promedio bulto (no matchea contra la columna K/Cod del deposito)")
         if motivos:

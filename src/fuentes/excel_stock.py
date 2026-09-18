@@ -37,8 +37,6 @@ from src.fuentes.base import FuenteStock
 
 logger = logging.getLogger(__name__)
 
-DEPOSITO_SIN_CLASIFICAR = "SIN DEPOSITO"
-
 # Pestañas a leer, en el orden en que se procesan (una = un deposito).
 HOJAS_DEPOSITO = ["OB", "SV", "PR", "TC"]
 
