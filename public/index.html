@@ -26,6 +26,19 @@
     </div>
   </header>
 
+  <!-- Solo se ve al exportar a PDF (window.print) -- app.js::exportarPDF la
+       completa justo antes de imprimir con la fecha y los filtros que
+       estaban aplicados en ese momento, para que quien reciba el PDF sepa
+       a que corte de datos corresponde. Ver estilos.css @media print. -->
+  <div id="encabezado-impresion" class="encabezado-impresion">
+    <div class="encabezado-impresion-marca">
+      <img id="logo-impresion" class="logo-impresion" src="" alt="" hidden>
+      <span class="encabezado-impresion-titulo">Unificador de Stock — Bebidas</span>
+    </div>
+    <div class="encabezado-impresion-fecha" id="encabezado-impresion-fecha"></div>
+    <div class="encabezado-impresion-filtros" id="encabezado-impresion-filtros"></div>
+  </div>
+
   <div id="avisos" class="avisos" hidden></div>
 
   <section class="kpis" id="kpis" aria-label="Resumen de stock (click para filtrar)">

@@ -37,6 +37,8 @@
   const checkSinClasificar = document.getElementById("filtro-sin-clasificar");
   const contadorSinClasificarEl = document.getElementById("contador-sin-clasificar");
   const toastEl = document.getElementById("toast");
+  const encabezadoImpresionFechaEl = document.getElementById("encabezado-impresion-fecha");
+  const encabezadoImpresionFiltrosEl = document.getElementById("encabezado-impresion-filtros");
   const kpiEls = {
     total: document.getElementById("kpi-total"),
     rojo: document.getElementById("kpi-rojo"),
@@ -129,7 +131,7 @@
       alCambiar();
     });
 
-    return { setOpciones, getSeleccion: () => seleccion };
+    return { setOpciones, getSeleccion: () => seleccion, getOpciones: () => opciones };
   }
 
   document.addEventListener("click", (ev) => {
@@ -372,11 +374,11 @@
         <td data-campo="deposito">${art.deposito}</td>
         <td data-campo="codigo">${art.codigo}</td>
         <td data-campo="descripcion" title="${escaparHtml(art.descripcion)}">${art.descripcion}</td>
-        <td data-campo="stock_bultos" class="num">${valorCeldaTexto(art, "stock_bultos")}</td>
-        <td data-campo="venta_promedio_bulto" class="num">${valorCeldaTexto(art, "venta_promedio_bulto")}</td>
-        <td data-campo="dias_stock" class="num">${celdaDiasStock(art)}${icono}</td>
-        <td data-campo="transito_bultos" class="num">${valorCeldaTexto(art, "transito_bultos")}</td>
-        <td data-campo="dias_stock_c_transito" class="num">${valorCeldaTexto(art, "dias_stock_c_transito")}</td>
+        <td data-campo="stock_bultos" class="num" title="${valorCeldaTexto(art, "stock_bultos")}">${valorCeldaTexto(art, "stock_bultos")}</td>
+        <td data-campo="venta_promedio_bulto" class="num" title="${valorCeldaTexto(art, "venta_promedio_bulto")}">${valorCeldaTexto(art, "venta_promedio_bulto")}</td>
+        <td data-campo="dias_stock" class="num" title="${valorCeldaTexto(art, "dias_stock")}">${celdaDiasStock(art)}${icono}</td>
+        <td data-campo="transito_bultos" class="num" title="${valorCeldaTexto(art, "transito_bultos")}">${valorCeldaTexto(art, "transito_bultos")}</td>
+        <td data-campo="dias_stock_c_transito" class="num" title="${valorCeldaTexto(art, "dias_stock_c_transito")}">${valorCeldaTexto(art, "dias_stock_c_transito")}</td>
       </tr>`;
       }).join("");
     }
@@ -493,14 +495,54 @@
     URL.revokeObjectURL(url);
   }
 
+  const ETIQUETA_ESTADO = {
+    "semaforo-rojo": "Riesgo de quiebre",
+    "semaforo-verde": "Normal",
+    "semaforo-sobrestock": "Sobrestock",
+  };
+
+  // Como se ve la seleccion de un multiselect en el resumen del PDF: "Todos"
+  // si no hay nada descartado (asi el que lo recibe sabe que es el universo
+  // completo y no un recorte), la lista si es un subconjunto chico, o un
+  // aviso si el filtro ni siquiera tiene opciones cargadas (caso Cluster).
+  function etiquetaMultiselectPDF(multi) {
+    const opciones = multi.getOpciones();
+    const seleccion = multi.getSeleccion();
+    if (opciones.length === 0) return "sin datos cargados todavía";
+    if (seleccion.size === opciones.length) return "Todos";
+    if (seleccion.size === 0) return "ninguno (0 artículos)";
+    return [...seleccion].sort((a, b) => a.localeCompare(b, "es")).join(", ");
+  }
+
+  function resumenFiltrosPDF() {
+    const partes = [
+      `<strong>Depósito:</strong> ${escaparHtml(etiquetaMultiselectPDF(multiDeposito))}`,
+      `<strong>Clúster:</strong> ${escaparHtml(etiquetaMultiselectPDF(multiCluster))}`,
+    ];
+    const busqueda = inputBuscador.value.trim();
+    if (busqueda) partes.push(`<strong>Búsqueda:</strong> "${escaparHtml(busqueda)}"`);
+    if (checkSinClasificar.checked) partes.push("<strong>Solo artículos sin clasificar</strong>");
+    if (filtroEstado) {
+      partes.push(`<strong>Estado:</strong> ${escaparHtml(ETIQUETA_ESTADO[filtroEstado] || filtroEstado)}`);
+    }
+    return partes.join(" &nbsp;•&nbsp; ");
+  }
+
   function exportarPDF() {
     // El PDF sale del dialogo de impresion del navegador: la tabla en
     // pantalla YA esta filtrada/ordenada/con las columnas que el usuario
     // eligio, asi que imprimir tal cual (con una hoja de estilos @media
     // print que oculta todo lo que no sea la tabla) alcanza -- no hace
-    // falta duplicar esa logica ni sumar una libreria de PDF.
+    // falta duplicar esa logica ni sumar una libreria de PDF. El
+    // encabezado de impresion (oculto en pantalla) se completa recien aca,
+    // con la fecha y los filtros vigentes en este momento.
+    const ahora = new Date();
+    encabezadoImpresionFechaEl.textContent =
+      `Generado el ${ahora.toLocaleDateString("es-AR")} a las ${ahora.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })} — ${listaVisible().length} artículos en este reporte`;
+    encabezadoImpresionFiltrosEl.innerHTML = resumenFiltrosPDF();
+
     const tituloOriginal = document.title;
-    document.title = `stock_bebidas_${new Date().toISOString().slice(0, 10)}`;
+    document.title = `stock_bebidas_${ahora.toISOString().slice(0, 10)}`;
     window.print();
     document.title = tituloOriginal;
   }

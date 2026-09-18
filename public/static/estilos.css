@@ -534,6 +534,9 @@ thead th {
   letter-spacing: 0.04em;
   border-bottom: 1px solid var(--gridline);
   cursor: pointer;
+  /* Los encabezados numericos (ej. "DIAS STOCK C/TRANSITO") pueden partirse
+     en 2 lineas -- si no, un titulo largo obliga a toda la columna a ser
+     tan ancha como el titulo, aunque los valores sean cortos ("0,00"). */
   white-space: nowrap;
   user-select: none;
   transition: color var(--transicion), background var(--transicion);
@@ -541,7 +544,12 @@ thead th {
 
 thead th:hover { color: var(--tinta-primaria); background: #eadcc0; }
 
-thead th.num { text-align: right; }
+thead th.num {
+  text-align: right;
+  white-space: normal;
+  max-width: 108px;
+  line-height: 1.3;
+}
 
 thead th.orden-activo { color: var(--acento); }
 
@@ -554,7 +562,17 @@ tbody td {
   white-space: nowrap;
 }
 
-tbody td.num { text-align: right; font-variant-numeric: tabular-nums; }
+tbody td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  /* Cap de ancho: sin esto, un solo articulo con un valor grande (ej.
+     stock de 243.343 bultos en un caso real) estira la columna entera
+     para las otras 800+ filas que muestran "0,00". El valor completo
+     sigue disponible en el title (ver app.js::valorCeldaTexto). */
+  max-width: 108px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 tbody tr { transition: background var(--transicion); }
 tbody tr:hover { background: #f2f4f7; }
@@ -708,7 +726,11 @@ tbody tr.semaforo-neutro td:first-child { border-left: 3px solid transparent; }
 
 /* ---------- Exportar PDF (window.print, ver app.js::exportarPDF) ----------
    La tabla en pantalla ya esta filtrada/ordenada/con las columnas elegidas
-   -- imprimir tal cual (ocultando todo lo que no sea la tabla) alcanza. */
+   -- imprimir tal cual (ocultando todo lo que no sea la tabla) alcanza.
+   El encabezado de impresion (logo + fecha + filtros aplicados) vive
+   siempre en el DOM pero oculto en pantalla; solo se muestra al imprimir. */
+
+.encabezado-impresion { display: none; }
 
 @media print {
   .barra-superior, .avisos, .kpis, .graficos, .barra-filtros,
@@ -736,6 +758,45 @@ tbody tr.semaforo-neutro td:first-child { border-left: 3px solid transparent; }
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
+
+  .encabezado-impresion {
+    display: block;
+    padding: 0 0 12px;
+    margin-bottom: 12px;
+    border-bottom: 2px solid var(--acento);
+  }
+
+  .encabezado-impresion-marca {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo-impresion {
+    height: 28px;
+    width: auto;
+  }
+
+  .encabezado-impresion-titulo {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--tinta-primaria);
+  }
+
+  .encabezado-impresion-fecha {
+    margin-top: 4px;
+    font-size: 11px;
+    color: var(--tinta-muted);
+  }
+
+  .encabezado-impresion-filtros {
+    margin-top: 6px;
+    font-size: 11px;
+    color: var(--tinta-secundaria);
+    line-height: 1.5;
+  }
+
+  .encabezado-impresion-filtros strong { color: var(--tinta-primaria); }
 
   #cuerpo-tabla tr.fila-nueva { animation: none; }
 }
