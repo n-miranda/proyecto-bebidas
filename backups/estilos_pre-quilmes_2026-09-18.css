@@ -1,29 +1,22 @@
 :root {
-  /* Tokens de marca -- paleta Quilmes (2026-09-18, a pedido del usuario).
-     Colores sacados del CSS real de quilmes.com.ar, no inventados:
-     #D50032 es su rojo dominante (botones, estados activos, hover),
-     #F7F0E6 su fondo crema, #031532/#0E2240 su tinta azul marino oscura.
-     Backup de la paleta anterior en backups/estilos_pre-quilmes_2026-09-18.css. */
-  --superficie: #fffdf9;
-  --plano-pagina: #F7F0E6;
-  --tinta-primaria: #031532;
-  --tinta-secundaria: #0e2240;
-  --tinta-muted: #6b7280;
-  --gridline: #e8ddc8;
-  --borde: rgba(3, 21, 50, 0.12);
-  --acento: #D50032;
-  --acento-hover: #a80028;
+  /* Tokens de marca (paleta validada, ver skill dataviz/references/palette.md) */
+  --superficie: #fcfcfb;
+  --plano-pagina: #f9f9f7;
+  --tinta-primaria: #0b0b0b;
+  --tinta-secundaria: #52514e;
+  --tinta-muted: #898781;
+  --gridline: #e1e0d9;
+  --borde: rgba(11, 11, 11, 0.10);
+  --acento: #2a78d6;
+  --acento-hover: #184f95;
 
-  --color-fondo-header: #031532;
-  --color-fondo-header-texto: #F7F0E6;
+  --color-fondo-header: #14181d;
+  --color-fondo-header-texto: #f9f9f7;
 
   --aviso: #92400e;
   --aviso-fondo: #fef3c7;
 
-  /* Paleta de estado (fija, no se tematiza -- es el semaforo de riesgo de
-     stock, no debe perder claridad por el rebranding). 'critico' se deja
-     en un rojo cercano al de marca pero no identico, para que un boton
-     Quilmes y una fila en riesgo de quiebre se sigan distinguiendo. */
+  /* Paleta de estado (fija, no se tematiza) */
   --estado-bien: #0ca30c;
   --estado-bien-fondo: #e9f8e9;
   --estado-atencion: #b3790f;
@@ -34,7 +27,7 @@
   --estado-info-fondo: #e9f1fc;
 
   --radio: 6px;
-  --sombra-flotante: 0 8px 24px rgba(3, 21, 50, 0.16);
+  --sombra-flotante: 0 8px 24px rgba(11, 11, 11, 0.14);
   --transicion: 150ms ease;
 }
 
@@ -55,24 +48,12 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: linear-gradient(120deg, var(--color-fondo-header) 0%, #0e2240 65%, #170a14 100%);
+  background: var(--color-fondo-header);
   color: var(--color-fondo-header-texto);
   padding: 14px 28px;
 }
 
 .marca {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.marca-icono {
-  width: 30px;
-  height: 30px;
-  flex-shrink: 0;
-}
-
-.marca-texto {
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -83,7 +64,7 @@ body {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.09em;
-  color: var(--acento);
+  color: #6fa4e0;
 }
 
 .barra-superior h1 {
@@ -98,12 +79,12 @@ body {
   align-items: center;
   gap: 18px;
   font-size: 13px;
-  color: rgba(247, 240, 230, 0.65);
+  color: #c3c2b7;
 }
 
 .ventana-ventas {
   padding-left: 18px;
-  border-left: 1px solid rgba(247, 240, 230, 0.25);
+  border-left: 1px solid rgba(249, 249, 247, 0.2);
   cursor: help;
 }
 
@@ -226,99 +207,6 @@ body {
 .kpi-normal .kpi-valor { color: var(--estado-bien); }
 .kpi-sobrestock .kpi-valor { color: var(--estado-info); }
 
-/* ---------- Graficos de resumen (dataviz skill: barras HTML/CSS, marca
-   fina con extremos redondeados, rotulo directo + tooltip como capa
-   adicional; se recalculan con cada filtro, ver app.js::renderGraficos) ---------- */
-
-.graficos {
-  display: flex;
-  gap: 16px;
-  padding: 4px 28px 18px;
-  flex-wrap: wrap;
-}
-
-.grafico-panel {
-  flex: 1 1 340px;
-  background: var(--superficie);
-  border-radius: var(--radio);
-  padding: 16px 20px 18px;
-  box-shadow: 0 1px 3px rgba(11, 11, 11, 0.08);
-}
-
-.grafico-titulo {
-  margin: 0 0 12px;
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--tinta-secundaria);
-}
-
-.grafico-vacio {
-  margin: 0;
-  font-size: 13px;
-  color: var(--tinta-muted);
-}
-
-.barra-fila {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 5px 0;
-}
-
-.barra-etiqueta {
-  width: 82px;
-  flex-shrink: 0;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--tinta-secundaria);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.barra-pista {
-  flex: 1;
-  height: 14px;
-  background: var(--plano-pagina);
-  border-radius: 7px;
-  overflow: hidden;
-  transition: background var(--transicion);
-}
-
-.barra-fila:hover .barra-pista { background: var(--gridline); }
-
-.barra-valor {
-  height: 100%;
-  border-radius: 7px;
-  transition: width 320ms ease;
-}
-
-.barra-numero {
-  width: 42px;
-  flex-shrink: 0;
-  text-align: right;
-  font-size: 12.5px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  color: var(--tinta-primaria);
-}
-
-.grafico-tooltip {
-  position: fixed;
-  z-index: 200;
-  pointer-events: none;
-  background: var(--tinta-primaria);
-  color: var(--superficie);
-  font-size: 12px;
-  font-weight: 600;
-  padding: 6px 10px;
-  border-radius: 5px;
-  box-shadow: var(--sombra-flotante);
-  white-space: nowrap;
-}
-
 /* ---------- Filtros ---------- */
 
 .barra-filtros {
@@ -374,7 +262,7 @@ body {
   border: 1px solid var(--gridline);
   border-radius: var(--radio);
   font-size: 13px;
-  background: var(--superficie) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath fill='%230e2240' d='M1 1l5 5 5-5'/%3E%3C/svg%3E") no-repeat right 10px center;
+  background: var(--superficie) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath fill='%2352514e' d='M1 1l5 5 5-5'/%3E%3C/svg%3E") no-repeat right 10px center;
   cursor: pointer;
   color: var(--tinta-primaria);
   white-space: nowrap;
@@ -512,7 +400,7 @@ table {
 thead th {
   position: sticky;
   top: 0;
-  background: #f0e6d2;
+  background: #f1f0ec;
   color: var(--tinta-secundaria);
   text-align: left;
   padding: 11px 14px;
@@ -527,7 +415,7 @@ thead th {
   transition: color var(--transicion), background var(--transicion);
 }
 
-thead th:hover { color: var(--tinta-primaria); background: #eadcc0; }
+thead th:hover { color: var(--tinta-primaria); background: #ebeae5; }
 
 thead th.num { text-align: right; }
 
@@ -621,22 +509,7 @@ tbody tr.semaforo-neutro td:first-child { border-left: 3px solid transparent; }
   cursor: help;
 }
 
-/* Transicion de filas al filtrar/ordenar (pedido del usuario, 2026-09-18):
-   cada fila entra con un fade + slide corto en vez de cambiar de golpe. El
-   escalonado (animation-delay) lo pone app.js por fila, acotado a las
-   primeras ~24 para que listas largas no tarden "visualmente" en aparecer. */
-@keyframes fila-aparece {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-#cuerpo-tabla tr.fila-nueva {
-  animation: fila-aparece 260ms ease both;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  #cuerpo-tabla tr.fila-nueva { animation: none; }
-}
+#cuerpo-tabla { transition: opacity 120ms ease; }
 
 .totales {
   position: fixed;
@@ -692,38 +565,4 @@ tbody tr.semaforo-neutro td:first-child { border-left: 3px solid transparent; }
 
 @keyframes salir-toast {
   to { opacity: 0; transform: translateY(8px); }
-}
-
-/* ---------- Exportar PDF (window.print, ver app.js::exportarPDF) ----------
-   La tabla en pantalla ya esta filtrada/ordenada/con las columnas elegidas
-   -- imprimir tal cual (ocultando todo lo que no sea la tabla) alcanza. */
-
-@media print {
-  .barra-superior, .avisos, .kpis, .graficos, .barra-filtros,
-  .totales, .toast, .grafico-tooltip {
-    display: none !important;
-  }
-
-  body { background: #fff; }
-
-  main { padding: 0; overflow: visible; }
-
-  table {
-    width: 100%;
-    box-shadow: none;
-  }
-
-  #tabla-stock thead th:nth-child(1),
-  #tabla-stock tbody td:nth-child(1) {
-    position: static;
-  }
-
-  thead th { position: static; background: #f0e6d2 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-
-  tbody tr.semaforo-rojo, tbody tr.semaforo-amarillo, tbody tr.semaforo-sobrestock {
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-
-  #cuerpo-tabla tr.fila-nueva { animation: none; }
 }

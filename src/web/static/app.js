@@ -16,6 +16,10 @@
     { campo: "dias_stock_c_transito", etiqueta: "Días stock c/tránsito", num: true },
   ];
 
+  // Paleta categorica validada (skill dataviz/references/palette.md, slots
+  // 1-4, orden fijo -- no ciclar ni reordenar por valor).
+  const PALETA_CATEGORICA = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100"];
+
   let articulos = [];
   let ordenCampo = "dias_stock";
   let ordenAscendente = true;
@@ -27,6 +31,7 @@
   const totalesEl = document.getElementById("totales");
   const btnActualizar = document.getElementById("btn-actualizar");
   const btnExportar = document.getElementById("btn-exportar");
+  const btnExportarPdf = document.getElementById("btn-exportar-pdf");
   const btnStockGeneral = document.getElementById("btn-stock-general");
   const inputBuscador = document.getElementById("filtro-buscador");
   const checkSinClasificar = document.getElementById("filtro-sin-clasificar");
@@ -135,6 +140,22 @@
 
   const multiDeposito = crearMultiSelect("multiselect-deposito", () => render());
   const multiCluster = crearMultiSelect("multiselect-cluster", () => render());
+
+  // Selector de columnas visibles (pedido del usuario, 2026-09-18). Solo
+  // ofrece las columnas que existen HOY en COLUMNAS -- las que ya se sacaron
+  // de la tabla (Proveedor, Rubro, Venta 7d) no vuelven a aparecer aca.
+  const estiloColumnas = document.createElement("style");
+  document.head.appendChild(estiloColumnas);
+  const multiColumnas = crearMultiSelect("multiselect-columnas", () => aplicarColumnasVisibles());
+  multiColumnas.setOpciones(COLUMNAS.map((c) => c.etiqueta));
+
+  function aplicarColumnasVisibles() {
+    const seleccion = multiColumnas.getSeleccion();
+    const ocultas = COLUMNAS.filter((c) => !seleccion.has(c.etiqueta)).map((c) => c.campo);
+    estiloColumnas.textContent = ocultas
+      .map((campo) => `[data-campo="${campo}"] { display: none; }`)
+      .join("\n");
+  }
 
   function formatearDiasStock(valor, stockMasTransito) {
     if (valor === null || valor === undefined) {
@@ -307,31 +328,62 @@
     return conteo;
   }
 
+  // Graficos de resumen (panel arriba de los filtros): se recalculan con
+  // cada render(), asi que siempre reflejan los filtros aplicados en ese
+  // momento -- no es una foto fija del total sin filtrar.
+  function renderGraficos(filasSinEstado, conteo) {
+    if (!window.Graficos) return;
+
+    const porDeposito = new Map();
+    for (const a of filasSinEstado) {
+      porDeposito.set(a.deposito, (porDeposito.get(a.deposito) || 0) + 1);
+    }
+    const datosDeposito = [...porDeposito.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0], "es"))
+      .map(([etiqueta, valor], i) => ({
+        etiqueta, valor, color: PALETA_CATEGORICA[i % PALETA_CATEGORICA.length],
+      }));
+    window.Graficos.renderBarras("grafico-deposito", datosDeposito);
+
+    const datosRiesgo = [
+      { etiqueta: "Crítico", valor: conteo.rojo, color: "var(--estado-critico)" },
+      { etiqueta: "Normal", valor: conteo.verde, color: "var(--estado-bien)" },
+      { etiqueta: "Sobrestock", valor: conteo.sobrestock, color: "var(--estado-info)" },
+    ];
+    window.Graficos.renderBarras("grafico-riesgo", datosRiesgo);
+  }
+
   function render() {
     const filas = listaVisible();
 
     if (filas.length === 0) {
       cuerpoTabla.innerHTML = '<tr><td colspan="8">No hay artículos que coincidan con los filtros.</td></tr>';
     } else {
-      cuerpoTabla.innerHTML = filas.map((art) => {
+      cuerpoTabla.innerHTML = filas.map((art, idx) => {
         const clase = claseSemaforo(art);
         const icono = esQuiebreCubierto(art) ? " " + ICONO_TRANSITO_SVG : "";
+        // Escalonado suave: solo las primeras filas visibles a simple vista
+        // se demoran un toque entre si, para que se note el efecto sin
+        // hacer esperar en listas largas (filtrar 800 filas no debe tardar
+        // "visualmente" 8 segundos en terminar de aparecer).
+        const demora = Math.min(idx, 24) * 10;
         return `
-      <tr class="${clase}">
-        <td>${art.deposito}</td>
-        <td>${art.codigo}</td>
-        <td title="${escaparHtml(art.descripcion)}">${art.descripcion}</td>
-        <td class="num">${valorCeldaTexto(art, "stock_bultos")}</td>
-        <td class="num">${valorCeldaTexto(art, "venta_promedio_bulto")}</td>
-        <td class="num">${celdaDiasStock(art)}${icono}</td>
-        <td class="num">${valorCeldaTexto(art, "transito_bultos")}</td>
-        <td class="num">${valorCeldaTexto(art, "dias_stock_c_transito")}</td>
+      <tr class="${clase} fila-nueva" style="animation-delay: ${demora}ms">
+        <td data-campo="deposito">${art.deposito}</td>
+        <td data-campo="codigo">${art.codigo}</td>
+        <td data-campo="descripcion" title="${escaparHtml(art.descripcion)}">${art.descripcion}</td>
+        <td data-campo="stock_bultos" class="num">${valorCeldaTexto(art, "stock_bultos")}</td>
+        <td data-campo="venta_promedio_bulto" class="num">${valorCeldaTexto(art, "venta_promedio_bulto")}</td>
+        <td data-campo="dias_stock" class="num">${celdaDiasStock(art)}${icono}</td>
+        <td data-campo="transito_bultos" class="num">${valorCeldaTexto(art, "transito_bultos")}</td>
+        <td data-campo="dias_stock_c_transito" class="num">${valorCeldaTexto(art, "dias_stock_c_transito")}</td>
       </tr>`;
       }).join("");
     }
 
     const filasSinEstado = filtrarSinEstado(articulos);
-    renderKPIs(filasSinEstado);
+    const conteo = renderKPIs(filasSinEstado);
+    renderGraficos(filasSinEstado, conteo);
 
     const textoBase = filtroEstado
       ? `${filas.length} artículos filtrados (filtro de estado activo — click de nuevo en el KPI para quitarlo)`
@@ -342,9 +394,6 @@
       ? `<span class="resumen-riesgo">Proveedor con más riesgo: <strong>${escaparHtml(top[0])}</strong> (${fmtEntero.format(top[1])} artículos)</span>`
       : "";
     totalesEl.innerHTML = `<span>${textoBase}</span>${resumenRiesgo}`;
-
-    cuerpoTabla.style.opacity = "0";
-    requestAnimationFrame(() => { cuerpoTabla.style.opacity = "1"; });
   }
 
   function actualizarEncabezadosOrden() {
@@ -444,7 +493,20 @@
     URL.revokeObjectURL(url);
   }
 
+  function exportarPDF() {
+    // El PDF sale del dialogo de impresion del navegador: la tabla en
+    // pantalla YA esta filtrada/ordenada/con las columnas que el usuario
+    // eligio, asi que imprimir tal cual (con una hoja de estilos @media
+    // print que oculta todo lo que no sea la tabla) alcanza -- no hace
+    // falta duplicar esa logica ni sumar una libreria de PDF.
+    const tituloOriginal = document.title;
+    document.title = `stock_bebidas_${new Date().toISOString().slice(0, 10)}`;
+    window.print();
+    document.title = tituloOriginal;
+  }
+
   btnExportar.addEventListener("click", exportarCSV);
+  btnExportarPdf.addEventListener("click", exportarPDF);
   btnStockGeneral.addEventListener("click", () => window.open("/stock-general", "_blank"));
 
   async function cargarTodo() {

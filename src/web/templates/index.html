@@ -4,14 +4,20 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Unificador de Stock — Bebidas</title>
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232a78d6'/%3E%3Cpath d='M9 12l7-4 7 4v8l-7 4-7-4z' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linejoin='round'/%3E%3Cpath d='M9 12l7 4 7-4M16 16v8' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23D50032'/%3E%3Cpath d='M9 12l7-4 7 4v8l-7 4-7-4z' fill='none' stroke='%23F7F0E6' stroke-width='2' stroke-linejoin='round'/%3E%3Cpath d='M9 12l7 4 7-4M16 16v8' fill='none' stroke='%23F7F0E6' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="{{ url_for('static', filename='estilos.css') }}?v={{ v('estilos.css') }}">
 </head>
 <body>
   <header class="barra-superior">
     <div class="marca">
-      <span class="marca-empresa">Bebidas</span>
-      <h1>Unificador de Stock</h1>
+      <svg class="marca-icono" viewBox="0 0 32 32" aria-hidden="true">
+        <path d="M16 1.5 L30.5 16 L16 30.5 L1.5 16 Z" fill="var(--acento)" stroke="var(--plano-pagina)" stroke-width="1.5" stroke-linejoin="round"/>
+        <path d="M16 9 L23 16 L16 23 L9 16 Z" fill="none" stroke="var(--plano-pagina)" stroke-width="1.3" stroke-linejoin="round"/>
+      </svg>
+      <div class="marca-texto">
+        <span class="marca-empresa">Bebidas</span>
+        <h1>Unificador de Stock</h1>
+      </div>
     </div>
     <div class="info-actualizacion">
       <span id="fecha-actualizacion">Cargando...</span>
@@ -53,6 +59,17 @@
     </div>
   </section>
 
+  <section class="graficos" id="graficos" aria-label="Gráficos de resumen (según filtros aplicados)">
+    <div class="grafico-panel">
+      <h2 class="grafico-titulo">Artículos por depósito</h2>
+      <div class="grafico-cuerpo" id="grafico-deposito"></div>
+    </div>
+    <div class="grafico-panel">
+      <h2 class="grafico-titulo">Estado de riesgo</h2>
+      <div class="grafico-cuerpo" id="grafico-riesgo"></div>
+    </div>
+  </section>
+
   <div class="barra-filtros">
     <div class="filtro">
       <label>Depósito</label>
@@ -80,6 +97,19 @@
         </div>
       </div>
     </div>
+    <div class="filtro">
+      <label>Columnas</label>
+      <div class="multiselect" id="multiselect-columnas">
+        <button type="button" class="multiselect-boton">Todas</button>
+        <div class="multiselect-panel" hidden>
+          <div class="multiselect-acciones">
+            <button type="button" data-accion="todos">Marcar todos</button>
+            <button type="button" data-accion="ninguno">Desmarcar todos</button>
+          </div>
+          <div class="multiselect-opciones"></div>
+        </div>
+      </div>
+    </div>
     <div class="filtro filtro-buscador">
       <label for="filtro-buscador">Buscar</label>
       <input id="filtro-buscador" type="text" placeholder="Código o descripción...">
@@ -93,6 +123,7 @@
     <div class="filtro-acciones">
       <button id="btn-stock-general" type="button">Stock general</button>
       <button id="btn-exportar" type="button">Exportar CSV</button>
+      <button id="btn-exportar-pdf" type="button">Exportar PDF</button>
     </div>
   </div>
 
@@ -119,7 +150,9 @@
   <footer id="totales" class="totales"></footer>
 
   <div id="toast" class="toast" role="status" hidden></div>
+  <div id="grafico-tooltip" class="grafico-tooltip" hidden></div>
 
+  <script src="{{ url_for('static', filename='graficos.js') }}?v={{ v('graficos.js') }}"></script>
   <script src="{{ url_for('static', filename='app.js') }}?v={{ v('app.js') }}"></script>
 </body>
 </html>
