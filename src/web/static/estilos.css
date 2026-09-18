@@ -388,7 +388,8 @@ main {
 }
 
 table {
-  width: 100%;
+  width: auto;
+  table-layout: auto;
   border-collapse: collapse;
   background: var(--superficie);
   border-radius: var(--radio);
@@ -426,6 +427,7 @@ thead th.orden-activo.orden-desc::after { content: " \25BC"; font-size: 10px; }
 tbody td {
   padding: 9px 14px;
   border-bottom: 1px solid var(--gridline);
+  white-space: nowrap;
 }
 
 tbody td.num { text-align: right; font-variant-numeric: tabular-nums; }
@@ -453,45 +455,35 @@ tbody tr.semaforo-sobrestock:hover { background: #dbe8f9; }
 
 tbody tr.semaforo-neutro td:first-child { border-left: 3px solid transparent; }
 
-/* ---------- Columnas fijas (codigo, descripcion) al scrollear ----------
-   Escapadas a #tabla-stock (la tabla principal): stock_general.html reusa
-   esta hoja de estilos con una tabla propia (#tabla-stock-general) cuyo
-   thead tiene dos filas (encabezado agrupado por deposito) -- un selector
-   nth-child(1)/(2) generico ahi pisaria las columnas de deposito, no solo
-   Codigo/Descripcion, porque nth-child cuenta por fila, no por tabla. */
+/* ---------- Columna fija (deposito) al scrollear ----------
+   Escapada a #tabla-stock (la tabla principal): stock_general.html reusa
+   esta hoja de estilos con una tabla propia (#tabla-stock-general).
+   Solo se congela la 1ra columna: al pedido del usuario (2026-09-18) de que
+   cada columna se ajuste al ancho de su dato mas largo (sin fijar px), ya
+   no se puede precalcular en CSS el offset 'left' de una 2da columna
+   congelada -- su ancho ahora es variable, depende del contenido. */
 
-#tabla-stock th:nth-child(1), #tabla-stock td:nth-child(1) { width: 100px; min-width: 100px; max-width: 100px; }
-#tabla-stock th:nth-child(2), #tabla-stock td:nth-child(2) {
-  width: 280px; min-width: 280px; max-width: 280px;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-
-#tabla-stock thead th:nth-child(1), #tabla-stock thead th:nth-child(2),
-#tabla-stock tbody td:nth-child(1), #tabla-stock tbody td:nth-child(2) {
+#tabla-stock thead th:nth-child(1), #tabla-stock tbody td:nth-child(1) {
   position: sticky;
+  left: 0;
 }
 
-#tabla-stock thead th:nth-child(1), #tabla-stock thead th:nth-child(2) { z-index: 3; }
-#tabla-stock tbody td:nth-child(1), #tabla-stock tbody td:nth-child(2) { z-index: 1; }
+#tabla-stock thead th:nth-child(1) { z-index: 3; }
+#tabla-stock tbody td:nth-child(1) { z-index: 1; background: var(--superficie); }
 
-#tabla-stock thead th:nth-child(1), #tabla-stock tbody td:nth-child(1) { left: 0; }
-#tabla-stock thead th:nth-child(2), #tabla-stock tbody td:nth-child(2) { left: 100px; }
-
-#tabla-stock tbody td:nth-child(1), #tabla-stock tbody td:nth-child(2) { background: var(--superficie); }
-#tabla-stock tbody tr:nth-child(even):not(.semaforo-rojo):not(.semaforo-amarillo):not(.semaforo-sobrestock) td:nth-child(1),
-#tabla-stock tbody tr:nth-child(even):not(.semaforo-rojo):not(.semaforo-amarillo):not(.semaforo-sobrestock) td:nth-child(2) {
+#tabla-stock tbody tr:nth-child(even):not(.semaforo-rojo):not(.semaforo-amarillo):not(.semaforo-sobrestock) td:nth-child(1) {
   background: var(--plano-pagina);
 }
-#tabla-stock tbody tr:hover td:nth-child(1), #tabla-stock tbody tr:hover td:nth-child(2) { background: #f2f4f7; }
+#tabla-stock tbody tr:hover td:nth-child(1) { background: #f2f4f7; }
 
-#tabla-stock tbody tr.semaforo-rojo td:nth-child(1), #tabla-stock tbody tr.semaforo-rojo td:nth-child(2) { background: var(--estado-critico-fondo); }
-#tabla-stock tbody tr.semaforo-rojo:hover td:nth-child(1), #tabla-stock tbody tr.semaforo-rojo:hover td:nth-child(2) { background: #f7dcdc; }
+#tabla-stock tbody tr.semaforo-rojo td:nth-child(1) { background: var(--estado-critico-fondo); }
+#tabla-stock tbody tr.semaforo-rojo:hover td:nth-child(1) { background: #f7dcdc; }
 
-#tabla-stock tbody tr.semaforo-amarillo td:nth-child(1), #tabla-stock tbody tr.semaforo-amarillo td:nth-child(2) { background: var(--estado-atencion-fondo); }
-#tabla-stock tbody tr.semaforo-amarillo:hover td:nth-child(1), #tabla-stock tbody tr.semaforo-amarillo:hover td:nth-child(2) { background: #fbe7bd; }
+#tabla-stock tbody tr.semaforo-amarillo td:nth-child(1) { background: var(--estado-atencion-fondo); }
+#tabla-stock tbody tr.semaforo-amarillo:hover td:nth-child(1) { background: #fbe7bd; }
 
-#tabla-stock tbody tr.semaforo-sobrestock td:nth-child(1), #tabla-stock tbody tr.semaforo-sobrestock td:nth-child(2) { background: var(--estado-info-fondo); }
-#tabla-stock tbody tr.semaforo-sobrestock:hover td:nth-child(1), #tabla-stock tbody tr.semaforo-sobrestock:hover td:nth-child(2) { background: #dbe8f9; }
+#tabla-stock tbody tr.semaforo-sobrestock td:nth-child(1) { background: var(--estado-info-fondo); }
+#tabla-stock tbody tr.semaforo-sobrestock:hover td:nth-child(1) { background: #dbe8f9; }
 
 .punto-estado {
   display: inline-block;
