@@ -8,6 +8,7 @@
   const fechaActualizacionEl = document.getElementById("fecha-actualizacion");
   const totalesEl = document.getElementById("totales");
   const inputBuscador = document.getElementById("filtro-buscador");
+  const btnExportarExcel = document.getElementById("btn-exportar-excel");
 
   let todasLasFilas = [];
   let depositos = [];
@@ -80,6 +81,37 @@
   }
 
   inputBuscador.addEventListener("input", render);
+
+  function csvEscapar(texto) {
+    const t = String(texto);
+    return /[;"\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
+  }
+
+  // "Exportar Excel": mismo mecanismo que "Exportar CSV" de la tabla
+  // principal (CSV con punto y coma + BOM UTF-8, que Excel en es-AR abre
+  // directo) -- respeta la busqueda aplicada en este momento.
+  function exportarExcel() {
+    const filas = filasFiltradas();
+    const encabezado = ["Código", "Descripción", ...depositos.map((d) => `${d} (bultos)`)].join(";");
+    const lineas = filas.map((fila) => [
+      csvEscapar(fila.codigo),
+      csvEscapar(fila.descripcion),
+      ...depositos.map((d) => fmtDosDecimales.format(fila.stockPorDeposito[d] ?? 0)),
+    ].join(";"));
+    const csv = "﻿" + [encabezado, ...lineas].join("\r\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const fecha = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `stock_general_${fecha}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  btnExportarExcel.addEventListener("click", exportarExcel);
 
   async function cargarTodo() {
     const [respStock, respMeta] = await Promise.all([
