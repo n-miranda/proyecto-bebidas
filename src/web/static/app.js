@@ -35,11 +35,10 @@
   const kpiEls = {
     total: document.getElementById("kpi-total"),
     rojo: document.getElementById("kpi-rojo"),
-    amarillo: document.getElementById("kpi-amarillo"),
     verde: document.getElementById("kpi-verde"),
     sobrestock: document.getElementById("kpi-sobrestock"),
   };
-  const valorPrevioKpi = { total: 0, rojo: 0, amarillo: 0, verde: 0, sobrestock: 0 };
+  const valorPrevioKpi = { total: 0, rojo: 0, verde: 0, sobrestock: 0 };
 
   let toastTimeoutId = null;
   function mostrarToast(mensaje, tipo = "exito") {
