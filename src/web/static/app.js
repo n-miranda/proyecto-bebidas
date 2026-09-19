@@ -19,8 +19,12 @@
   const ETIQUETA_COLUMNA = Object.fromEntries(COLUMNAS.map((c) => [c.campo, c.etiqueta]));
 
   let articulos = [];
-  let ordenCampo = "dias_stock";
+  // Sin orden por defecto: la tabla arranca en el orden de origen (por deposito
+  // y codigo). Cada clic en un encabezado recorre asc -> desc -> sin orden.
+  let ordenCampo = null;
   let ordenAscendente = true;
+
+  const CAMPOS_TEXTO = new Set(["descripcion", "deposito"]);
 
   const cuerpoTabla = document.getElementById("cuerpo-tabla");
   const fechaActualizacionEl = document.getElementById("fecha-actualizacion");
@@ -42,21 +46,27 @@
   const encabezadoImpresionFechaEl = document.getElementById("encabezado-impresion-fecha");
   const encabezadoImpresionFiltrosEl = document.getElementById("encabezado-impresion-filtros");
   const filtrosActivosEl = document.getElementById("filtros-activos");
-  const tablaCantidadEl = document.getElementById("tabla-cantidad");
-  const tablaOrdenDescEl = document.getElementById("tabla-orden-desc");
+  const tablaSubtituloEl = document.getElementById("tabla-subtitulo");
   const kpiTotalGeneralEl = document.getElementById("kpi-total-general");
+  const kpiSinVentaEl = document.getElementById("kpi-sin-venta");
+  const kpiAtencionEl = document.getElementById("kpi-atencion");
+  const kpiDetalleEls = {
+    rojo: document.getElementById("kpi-detalle-rojo"),
+    verde: document.getElementById("kpi-detalle-verde"),
+    sobrestock: document.getElementById("kpi-detalle-sobrestock"),
+  };
   const kpiEls = {
     total: document.getElementById("kpi-total"),
     rojo: document.getElementById("kpi-rojo"),
     verde: document.getElementById("kpi-verde"),
     sobrestock: document.getElementById("kpi-sobrestock"),
   };
-  const kpiCtaEls = {
-    rojo: document.getElementById("kpi-rojo-cta"),
-    verde: document.getElementById("kpi-verde-cta"),
-    sobrestock: document.getElementById("kpi-sobrestock-cta"),
-  };
   const valorPrevioKpi = { total: 0, rojo: 0, verde: 0, sobrestock: 0 };
+  const reducirMovimiento = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+  // Los KPI cuentan de 0 al valor solo en la carga inicial (o tras "Actualizar
+  // datos"); al filtrar en vivo se muestra el valor directo, sin animar.
+  let animarKpiEnEstaCarga = false;
 
   let toastTimeoutId = null;
   function mostrarToast(mensaje, tipo = "exito") {
@@ -70,8 +80,8 @@
     }, 3200);
   }
 
-  function animarNumero(el, desde, hasta, duracionMs = 350) {
-    if (desde === hasta) { el.textContent = fmtEntero.format(hasta); return; }
+  function animarNumero(el, desde, hasta, duracionMs = 1200) {
+    if (desde === hasta || reducirMovimiento.matches) { el.textContent = fmtEntero.format(hasta); return; }
     const inicio = performance.now();
     function paso(ahora) {
       const t = Math.min(1, (ahora - inicio) / duracionMs);
@@ -215,9 +225,12 @@
     "semaforo-sobrestock": "pe-sobrestock",
   };
 
+  // El estado nunca depende solo del color: el punto lleva title y texto
+  // para lectores de pantalla.
   function puntoEstado(art) {
     const clase = SUFIJO_PUNTO[claseSemaforo(art)];
-    return `<span class="punto-estado${clase ? " " + clase : ""}" title="${escaparHtml(ETIQUETA_ESTADO[claseSemaforo(art)] || "Sin venta")}"></span>`;
+    const nombre = escaparHtml(ETIQUETA_ESTADO[claseSemaforo(art)] || "Sin venta");
+    return `<span class="punto-estado${clase ? " " + clase : ""}" title="${nombre}"></span><span class="sr-only">${nombre}</span>`;
   }
 
   function poblarFiltros() {
@@ -233,6 +246,18 @@
       articulos.filter((a) => a.sin_clasificar).length
     );
     kpiTotalGeneralEl.textContent = fmtEntero.format(articulos.length);
+  }
+
+  // Textos de detalle de las tarjetas: los umbrales salen de config.json (via
+  // /api/meta), no van escritos a mano. Si la API no los trae, se usa un
+  // texto sin numeros. Con stock de seguridad conocido el corte real es
+  // relativo (ver clasificar_riesgo), por eso el texto habla del umbral general.
+  function poblarDetalleKpis(umbrales) {
+    if (!umbrales) return;
+    const { rojo_hasta: rojo, amarillo_hasta: amarillo, verde_hasta: verde } = umbrales;
+    kpiDetalleEls.rojo.textContent = `Menos de ${fmtEntero.format(rojo)} días`;
+    kpiDetalleEls.verde.textContent = `De ${fmtEntero.format(amarillo)} a ${fmtEntero.format(verde)} días`;
+    kpiDetalleEls.sobrestock.textContent = `Más de ${fmtEntero.format(verde)} días`;
   }
 
   let filtroEstado = null; // null | "semaforo-rojo" | "semaforo-amarillo" | "semaforo-verde" | "semaforo-sobrestock"
@@ -347,11 +372,15 @@
   checkSinClasificar.addEventListener("change", render);
 
   function ordenar(lista) {
+    if (!ordenCampo) return [...lista];
     return [...lista].sort((a, b) => {
       let va = a[ordenCampo];
       let vb = b[ordenCampo];
-      if (va === null || va === undefined) return 1;
-      if (vb === null || vb === undefined) return -1;
+      const faltaA = va === null || va === undefined;
+      const faltaB = vb === null || vb === undefined;
+      // Los sin dato (ej. dias de stock sin venta) van siempre al final,
+      // ascendente o descendente.
+      if (faltaA || faltaB) return faltaA === faltaB ? 0 : (faltaA ? 1 : -1);
       if (ordenCampo === "codigo") {
         va = Number(va);
         vb = Number(vb);
@@ -383,59 +412,40 @@
   }
 
   function renderKPIs(filasSinEstado) {
-    const conteo = { total: filasSinEstado.length, rojo: 0, amarillo: 0, verde: 0, sobrestock: 0 };
+    const conteo = { total: filasSinEstado.length, rojo: 0, amarillo: 0, verde: 0, sobrestock: 0, neutro: 0 };
     for (const a of filasSinEstado) {
       const clase = claseSemaforo(a);
       if (clase === "semaforo-rojo") conteo.rojo++;
       else if (clase === "semaforo-amarillo") conteo.amarillo++;
       else if (clase === "semaforo-verde") conteo.verde++;
       else if (clase === "semaforo-sobrestock") conteo.sobrestock++;
+      else conteo.neutro++;
     }
     for (const clave of Object.keys(kpiEls)) {
-      animarNumero(kpiEls[clave], valorPrevioKpi[clave], conteo[clave]);
+      if (animarKpiEnEstaCarga) {
+        animarNumero(kpiEls[clave], 0, conteo[clave]);
+      } else {
+        kpiEls[clave].textContent = fmtEntero.format(conteo[clave]);
+      }
       valorPrevioKpi[clave] = conteo[clave];
-      if (kpiCtaEls[clave]) kpiCtaEls[clave].textContent = fmtEntero.format(conteo[clave]);
     }
+    animarKpiEnEstaCarga = false;
+    kpiAtencionEl.textContent = fmtEntero.format(conteo.amarillo);
+    kpiSinVentaEl.textContent = fmtEntero.format(conteo.neutro);
     document.querySelectorAll(".kpi[data-estado]").forEach((el) => {
       const estado = el.dataset.estado || null;
-      el.classList.toggle("kpi-activo", estado === filtroEstado);
+      el.classList.toggle("kpi-activo", estado !== null && estado === filtroEstado);
     });
     return conteo;
   }
 
-  // Graficos de resumen (panel arriba de los filtros): se recalculan con
-  // cada render(), asi que siempre reflejan los filtros aplicados en ese
-  // momento -- no es una foto fija del total sin filtrar.
-  function renderGraficos(filasSinEstado, conteo) {
-    if (!window.Graficos) return;
-
-    const porDeposito = new Map();
-    for (const a of filasSinEstado) {
-      porDeposito.set(a.deposito, (porDeposito.get(a.deposito) || 0) + 1);
-    }
-    // Una sola magnitud por deposito (cantidad de articulos) -- un solo
-    // color de acento, no una paleta categorica: no son "series" distintas,
-    // es un ranking de la misma medida.
-    const datosDeposito = [...porDeposito.entries()]
-      .sort((a, b) => a[0].localeCompare(b[0], "es"))
-      .map(([etiqueta, valor]) => ({ etiqueta, valor, color: "var(--acento)" }));
-    window.Graficos.renderBarras("grafico-deposito", datosDeposito);
-
-    const datosRiesgo = [
-      { etiqueta: "Quiebre", valor: conteo.rojo, color: "var(--estado-critico)" },
-      { etiqueta: "Normal", valor: conteo.verde, color: "var(--estado-bien)" },
-      { etiqueta: "Sobrestock", valor: conteo.sobrestock, color: "var(--estado-sobrestock)" },
-    ];
-    window.Graficos.renderSegmentado("grafico-riesgo", datosRiesgo);
-  }
-
-  function celda(campo, art, extraClase = "") {
+  function celda(campo, art, extraClase = "", prefijoHtml = "") {
     const esNum = COLUMNAS.find((c) => c.campo === campo)?.num;
     const activa = campo === ordenCampo;
     const clases = [esNum ? "num" : "", extraClase, activa ? "orden-activo" : ""].filter(Boolean).join(" ");
     const texto = valorCeldaTexto(art, campo);
     const titleAttr = esNum ? ` title="${texto}"` : "";
-    return `<td data-campo="${campo}"${clases ? ` class="${clases}"` : ""}${titleAttr}>${texto}</td>`;
+    return `<td data-campo="${campo}"${clases ? ` class="${clases}"` : ""}${titleAttr}>${prefijoHtml}${texto}</td>`;
   }
 
   function render() {
@@ -446,36 +456,44 @@
     } else {
       cuerpoTabla.innerHTML = filas.map((art, idx) => {
         const clase = claseSemaforo(art);
-        const icono = esQuiebreCubierto(art) ? " " + ICONO_TRANSITO_SVG : "";
-        // Escalonado suave: solo las primeras filas visibles a simple vista
-        // se demoran un toque entre si, para que se note el efecto sin
-        // hacer esperar en listas largas (filtrar 800 filas no debe tardar
-        // "visualmente" 8 segundos en terminar de aparecer).
-        const demora = Math.min(idx, 24) * 10;
+        // Quiebre cubierto: fila critica con transito. Se marca en la propia
+        // celda de transito (antes era un icono suelto entre celdas).
+        const cubierto = esQuiebreCubierto(art);
+        const prefijoTransito = cubierto
+          ? '<span class="transito-cubierto" title="Quiebre cubierto por tránsito">▶</span> '
+          : "";
+        const claseTransito = cubierto ? "transito-cubierto" : "";
+        const novedad = art.novedad
+          ? `<em class="novedad">${escaparHtml(art.novedad)}</em>`
+          : "";
+        // Solo las primeras filas (las visibles sin scrollear) se animan, con
+        // un escalonado corto; animar las ~800 a la vez es pesado y no aporta.
+        const animada = idx < 24;
+        const claseFila = animada ? `${clase} fila-nueva` : clase;
+        const estiloFila = animada ? ` style="animation-delay: ${idx * 10}ms"` : "";
         return `
-      <tr class="${clase} fila-nueva" style="animation-delay: ${demora}ms">
+      <tr class="${claseFila}"${estiloFila}>
         <td class="col-dot">${puntoEstado(art)}</td>
         <td data-campo="codigo"${ordenCampo === "codigo" ? ' class="orden-activo"' : ""}>${art.codigo}</td>
-        <td data-campo="descripcion"${ordenCampo === "descripcion" ? ' class="orden-activo"' : ""} title="${escaparHtml(art.descripcion)}">${art.descripcion}</td>
+        <td data-campo="descripcion"${ordenCampo === "descripcion" ? ' class="orden-activo"' : ""} title="${escaparHtml(art.descripcion)}">${art.descripcion}${novedad}</td>
         <td data-campo="deposito"${ordenCampo === "deposito" ? ' class="orden-activo"' : ""}>${art.deposito}</td>
         ${celda("stock_bultos", art)}
         ${celda("venta_promedio_bulto", art)}
-        ${celda("dias_stock", art, "col-dias")}${icono}
-        ${celda("transito_bultos", art)}
-        ${celda("dias_stock_c_transito", art, "col-dias")}
+        ${celda("dias_stock", art, "col-dias")}
+        ${celda("transito_bultos", art, claseTransito, prefijoTransito)}
+        ${celda("dias_stock_c_transito", art)}
       </tr>`;
       }).join("");
     }
 
     const filasSinEstado = filtrarSinEstado(articulos);
-    const conteo = renderKPIs(filasSinEstado);
-    renderGraficos(filasSinEstado, conteo);
+    renderKPIs(filasSinEstado);
     renderChipsFiltros();
 
-    tablaCantidadEl.textContent = fmtEntero.format(filas.length);
-    tablaOrdenDescEl.textContent =
-      `ordenados por ${(ETIQUETA_COLUMNA[ordenCampo] || ordenCampo).toLowerCase()}, ` +
-      (ordenAscendente ? "de menor a mayor" : "de mayor a menor");
+    const cantidadDepositos = new Set(filas.map((a) => a.deposito)).size;
+    tablaSubtituloEl.textContent =
+      `${fmtEntero.format(filas.length)} filas · ${fmtEntero.format(cantidadDepositos)} ${cantidadDepositos === 1 ? "depósito" : "depósitos"} · una sola hoja · ` +
+      textoOrdenActual();
     btnExportarCantidadEl.textContent = fmtEntero.format(filas.length);
     btnExportarPdfCantidadEl.textContent = fmtEntero.format(filas.length);
 
@@ -487,23 +505,46 @@
     const resumenRiesgo = top
       ? `<span class="resumen-riesgo">Proveedor con más riesgo: <strong>${escaparHtml(top[0])}</strong> (${fmtEntero.format(top[1])} artículos)</span>`
       : "";
-    totalesEl.innerHTML = `<span>${textoBase}</span>${resumenRiesgo}`;
+    const leyenda = '<span class="leyenda"><span class="transito-cubierto">▶</span> con tránsito = quiebre cubierto</span>';
+    totalesEl.innerHTML = `<span>${textoBase}</span>${resumenRiesgo}${leyenda}`;
   }
 
+  function textoOrdenActual() {
+    if (!ordenCampo) return "sin ordenar";
+    const nombre = (ETIQUETA_COLUMNA[ordenCampo] || ordenCampo).toLowerCase();
+    const sentido = CAMPOS_TEXTO.has(ordenCampo)
+      ? (ordenAscendente ? "de A a Z" : "de Z a A")
+      : (ordenAscendente ? "de menor a mayor" : "de mayor a menor");
+    return `ordenadas por ${nombre}, ${sentido}`;
+  }
+
+  // Estado del orden en cada encabezado: clase para la flecha, aria-sort para
+  // lectores de pantalla y un tooltip que dice que hace el proximo clic.
   function actualizarEncabezadosOrden() {
     document.querySelectorAll("th[data-campo]").forEach((th) => {
-      th.classList.toggle("orden-activo", th.dataset.campo === ordenCampo);
-      th.classList.toggle("orden-desc", th.dataset.campo === ordenCampo && !ordenAscendente);
+      const activa = th.dataset.campo === ordenCampo;
+      const texto = CAMPOS_TEXTO.has(th.dataset.campo);
+      th.classList.toggle("orden-activo", activa);
+      th.classList.toggle("orden-desc", activa && !ordenAscendente);
+      th.setAttribute("aria-sort", !activa ? "none" : (ordenAscendente ? "ascending" : "descending"));
+      th.title = !activa
+        ? (texto ? "Ordenar de A a Z" : "Ordenar de menor a mayor")
+        : (ordenAscendente
+          ? (texto ? "Ordenar de Z a A" : "Ordenar de mayor a menor")
+          : "Quitar el orden");
     });
   }
 
   document.querySelectorAll("th[data-campo]").forEach((th) => {
     th.addEventListener("click", () => {
       const campo = th.dataset.campo;
-      if (campo === ordenCampo) {
-        ordenAscendente = !ordenAscendente;
-      } else {
+      if (campo !== ordenCampo) {
         ordenCampo = campo;
+        ordenAscendente = true;
+      } else if (ordenAscendente) {
+        ordenAscendente = false;
+      } else {
+        ordenCampo = null;
         ordenAscendente = true;
       }
       actualizarEncabezadosOrden();
@@ -518,16 +559,33 @@
     'stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5L21.5 20H2.5z"/>' +
     '<line x1="12" y1="9.5" x2="12" y2="14"/><line x1="12" y1="16.8" x2="12" y2="16.81"/></svg>';
 
+  // Chip "N avisos" con <details> nativo: el panel se abre sobre el
+  // contenido (no lo empuja hacia abajo como la banda fija anterior).
   function mostrarAvisos(avisos) {
     if (!avisos || avisos.length === 0) {
       avisosEl.hidden = true;
+      avisosEl.innerHTML = "";
       return;
     }
     avisosEl.hidden = false;
-    avisosEl.innerHTML = avisos
-      .map((a) => `<div class="aviso-item">${ICONO_AVISO_SVG}<span>${escaparHtml(a)}</span></div>`)
-      .join("");
+    avisosEl.innerHTML =
+      '<details class="avisos">' +
+      `<summary>${avisos.length} ${avisos.length === 1 ? "aviso" : "avisos"}</summary>` +
+      '<div class="avisos__panel" role="region" aria-label="Avisos de calidad de datos">' +
+      avisos.map((a) => `<div class="aviso-item">${ICONO_AVISO_SVG}<span>${escaparHtml(a)}</span></div>`).join("") +
+      "</div></details>";
   }
+
+  // Cierra el panel al hacer clic afuera o con Escape.
+  document.addEventListener("click", (ev) => {
+    const abierto = avisosEl.querySelector("details[open]");
+    if (abierto && !abierto.contains(ev.target)) abierto.removeAttribute("open");
+  });
+  document.addEventListener("keydown", (ev) => {
+    if (ev.key !== "Escape") return;
+    const abierto = avisosEl.querySelector("details[open]");
+    if (abierto) abierto.removeAttribute("open");
+  });
 
   function mostrarMeta(meta) {
     const fecha = new Date(meta.fecha_actualizacion + "T00:00:00");
@@ -557,12 +615,6 @@
       .replace(/"/g, "&quot;");
   }
 
-  const ICONO_TRANSITO_SVG =
-    '<svg class="icono-transito" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" ' +
-    'stroke-linecap="round" stroke-linejoin="round"><title>Quiebre cubierto por tránsito</title>' +
-    '<rect x="1" y="7" width="13" height="10"/><path d="M14 10h4l3 3v4h-7z"/>' +
-    '<circle cx="6" cy="18.5" r="1.6"/><circle cx="17.5" cy="18.5" r="1.6"/></svg>';
-
   function csvEscapar(texto) {
     const t = String(texto);
     return /[;"\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
@@ -589,6 +641,7 @@
 
   const ETIQUETA_ESTADO = {
     "semaforo-rojo": "Riesgo de quiebre",
+    "semaforo-amarillo": "Atención",
     "semaforo-verde": "Normal",
     "semaforo-sobrestock": "Sobrestock",
   };
@@ -653,10 +706,12 @@
       throw new Error(detalle.error || "No se pudieron cargar los datos.");
     }
     articulos = await respStock.json();
-    const { meta } = await respMeta.json();
+    const { meta, umbrales_semaforo: umbrales } = await respMeta.json();
     mostrarMeta(meta);
     mostrarAvisos(meta.avisos);
+    poblarDetalleKpis(umbrales);
     poblarFiltros();
+    animarKpiEnEstaCarga = true;
     actualizarEncabezadosOrden();
     render();
   }

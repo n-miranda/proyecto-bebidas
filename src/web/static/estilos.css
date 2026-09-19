@@ -3,16 +3,20 @@
      referencia provisto por el usuario (Vista principal-html.zip). Off-white
      neutro + header casi negro + azul como unico acento interactivo; rojo/
      verde/ambar quedan reservados al semaforo de riesgo, nunca al acento.
-     La paleta Quilmes anterior queda en
+     Ajustes de panel principal segun DISENO_PANEL_PRINCIPAL_CLAUDE_CODE.md
+     (2026-09-19). La paleta Quilmes anterior queda en
      backups/estilos_pre-quilmes_2026-09-18.css por si hay que volver. */
   --superficie: #ffffff;
+  --superficie-2: #faf9f6;
   --plano-pagina: #f5f4f0;
+  --encabezado-tabla: #efede6;
   --tinta-primaria: #1b1b18;
   --tinta-secundaria: #55554d;
   --tinta-muted: #8a8977;
-  --gridline: #dedcd4;
-  --gridline-tabla: #efede6;
+  --gridline: #e2dfd6;
+  --gridline-tabla: #e8e5dc;
   --borde: rgba(27, 27, 24, 0.10);
+  --borde-control: #cfcbc0;
   --acento: #2e5e7e;
   --acento-hover: #1f425a;
   --acento-fondo: #e6eef3;
@@ -29,29 +33,36 @@
      un tono "solido" (puntos, bordes) y uno "texto" mas oscuro para leer
      bien sobre blanco -- ver marks-and-anatomy del skill dataviz. */
   --estado-bien: #1f6a4c;
-  --estado-bien-fondo: #e7f1ec;
+  --estado-bien-fondo: #e3f0ea;
   --estado-atencion: #8a6d1a;
-  --estado-atencion-fondo: #f5efdd;
+  --estado-atencion-fondo: #f6efd9;
   --estado-critico: #a32b1f;
-  --estado-critico-texto: #8a2418;
-  --estado-critico-fondo: #f7e9e7;
+  --estado-critico-texto: #a32b1f;
+  --estado-critico-fondo: #f8e6e3;
   --estado-sobrestock: #c77a18;
-  --estado-sobrestock-texto: #7a4e0b;
-  --estado-sobrestock-fondo: #faefdd;
+  --estado-sobrestock-texto: #9a5a0a;
+  --estado-sobrestock-fondo: #fbeedb;
+  --estado-neutro: #9a968b;
+  --estado-neutro-texto: #6b675e;
 
   --radio: 12px;
   --radio-chico: 8px;
   --sombra-flotante: 0 8px 24px rgba(27, 27, 24, 0.14);
   --transicion: 150ms ease;
 
-  --fuente-cuerpo: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --fuente-display: "Space Grotesk", var(--fuente-cuerpo);
+  --fuente-cuerpo: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  --fuente-display: "Space Grotesk", "IBM Plex Sans", system-ui, Arial, sans-serif;
 }
 
 * { box-sizing: border-box; }
 
+/* La pagina ocupa exactamente la pantalla: barra + filtros + KPI arriba y la
+   tabla se estira por el resto, con scroll propio (encabezado fijo). */
 body {
   margin: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
   font-family: var(--fuente-cuerpo);
   background: var(--plano-pagina);
   color: var(--tinta-primaria);
@@ -59,17 +70,40 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+.contenedor {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 24px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* ---------- Barra superior ---------- */
 
 .barra-superior {
-  height: 64px;
+  height: 56px;
   flex-shrink: 0;
+  position: relative;
+  z-index: 30;
   display: flex;
   justify-content: space-between;
   align-items: center;
   background: var(--color-fondo-header);
   color: var(--color-fondo-header-texto);
-  padding: 0 32px;
+  padding: 0 24px;
 }
 
 .marca {
@@ -79,10 +113,10 @@ body {
 }
 
 .marca-icono {
-  width: 30px;
-  height: 30px;
+  width: 36px;
+  height: 36px;
   flex-shrink: 0;
-  border-radius: 7px;
+  border-radius: var(--radio-chico);
   background: var(--marca-badge);
   color: #fff;
   display: flex;
@@ -90,7 +124,7 @@ body {
   justify-content: center;
   font-family: var(--fuente-display);
   font-weight: 700;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .marca-texto {
@@ -101,7 +135,7 @@ body {
 
 .marca-texto h1 {
   font-family: var(--fuente-display);
-  font-size: 17px;
+  font-size: 20px;
   font-weight: 600;
   letter-spacing: -0.2px;
   margin: 0;
@@ -121,7 +155,7 @@ body {
   align-items: center;
   gap: 18px;
   font-size: 13px;
-  color: #b8b6ac;
+  color: #cfcbc0;
 }
 
 .ventana-ventas {
@@ -129,6 +163,8 @@ body {
   border-left: 1px solid #4a4a43;
   cursor: help;
 }
+
+.ventana-ventas:empty { display: none; }
 
 #btn-actualizar {
   display: flex;
@@ -158,16 +194,44 @@ body {
   to { transform: rotate(360deg); }
 }
 
-/* ---------- Avisos ---------- */
+/* ---------- Avisos (chip colapsable en la barra superior) ---------- */
 
-.avisos {
+.avisos { position: relative; }
+
+.avisos summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 4px 12px;
+  border-radius: 999px;
   background: var(--aviso-fondo);
   color: var(--aviso);
-  padding: 10px 28px;
+  font-weight: 600;
   font-size: 13px;
+  user-select: none;
+}
+
+.avisos summary::-webkit-details-marker { display: none; }
+.avisos summary::after { content: " \25BE"; }
+.avisos[open] summary::after { content: " \25B4"; }
+.avisos summary:focus-visible { outline: 2px solid var(--acento-borde); outline-offset: 2px; }
+
+.avisos__panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 12px);
+  z-index: 40;
+  width: 420px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
+  background: var(--superficie);
+  color: var(--tinta-primaria);
+  border: 1px solid var(--gridline);
+  border-left: 4px solid var(--aviso);
+  border-radius: var(--radio-chico);
+  padding: 12px 16px;
+  box-shadow: var(--sombra-flotante);
+  font-size: 13px;
 }
 
 .aviso-item {
@@ -185,250 +249,31 @@ body {
   color: var(--aviso);
 }
 
-/* ---------- KPIs ---------- */
-
-.kpis {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 18px;
-  padding: 24px 32px 0;
-}
-
-.kpi {
-  text-align: left;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  background: var(--superficie);
-  border: 1px solid var(--gridline);
-  border-radius: var(--radio);
-  padding: 16px 18px;
-  cursor: pointer;
-  font-family: inherit;
-  transition: border-color var(--transicion), box-shadow var(--transicion), transform 100ms ease;
-}
-
-.kpi:hover { border-color: var(--tinta-muted); }
-.kpi:active { transform: scale(0.99); }
-.kpi:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
-
-.kpi-critico.kpi-activo { border: 2px solid var(--estado-critico); padding: 15px 17px; }
-.kpi-atencion.kpi-activo { border: 2px solid var(--estado-atencion); padding: 15px 17px; }
-.kpi-normal.kpi-activo { border: 2px solid var(--estado-bien); padding: 15px 17px; }
-.kpi-sobrestock.kpi-activo { border: 2px solid var(--estado-sobrestock); padding: 15px 17px; }
-.kpi-total.kpi-activo { border: 2px solid var(--tinta-primaria); padding: 15px 17px; }
-
-.kpi-cabecera {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-}
-
-.kpi-punto {
-  width: 9px;
-  height: 9px;
-  flex-shrink: 0;
-  border-radius: 999px;
-  background: var(--tinta-muted);
-}
-
-.kpi-critico .kpi-punto { background: var(--estado-critico); }
-.kpi-atencion .kpi-punto { background: var(--estado-atencion); }
-.kpi-normal .kpi-punto { background: var(--estado-bien); }
-.kpi-sobrestock .kpi-punto { background: var(--estado-sobrestock); }
-
-.kpi-etiqueta {
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  color: var(--tinta-secundaria);
-}
-
-.kpi-critico .kpi-etiqueta { color: var(--estado-critico-texto); }
-
-.kpi-valor {
-  font-family: var(--fuente-display);
-  font-size: 34px;
-  font-weight: 600;
-  line-height: 1;
-  color: var(--tinta-primaria);
-}
-
-.kpi-critico .kpi-valor { color: var(--estado-critico-texto); }
-.kpi-atencion .kpi-valor { color: var(--estado-atencion); }
-.kpi-normal .kpi-valor { color: var(--tinta-primaria); }
-.kpi-sobrestock .kpi-valor { color: var(--tinta-primaria); }
-
-.kpi-subtexto {
-  font-size: 12px;
-  color: var(--tinta-secundaria);
-}
-
-.kpi-cta {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--acento);
-}
-
-.kpi-critico .kpi-cta { color: var(--estado-critico); }
-
-.kpi-cta svg { flex-shrink: 0; }
-
-/* ---------- Graficos de resumen (dataviz skill: barras HTML/CSS, marca
-   fina con extremos redondeados, rotulo directo + tooltip como capa
-   adicional; se recalculan con cada filtro, ver app.js::renderGraficos) ---------- */
-
-.graficos {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(280px, 1fr));
-  gap: 18px;
-  padding: 0 32px;
-}
-
-.grafico-panel {
-  background: var(--superficie);
-  border: 1px solid var(--gridline);
-  border-radius: var(--radio);
-  padding: 16px 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 13px;
-}
-
-.grafico-titulo {
-  margin: 0;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--tinta-primaria);
-}
-
-/* Estado de riesgo: una sola barra segmentada (proporcion), no una barra
-   por categoria -- mas compacta para 3-4 franjas que suman el 100%. */
-.grafico-segmentado {
-  display: flex;
-  height: 26px;
-  border-radius: 6px;
-  overflow: hidden;
-  background: var(--gridline-tabla);
-}
-
-.grafico-segmentado .segmento { transition: width 320ms ease; }
-
-.leyenda-segmentos {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 20px;
-}
-
-.leyenda-item {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 12px;
-  color: var(--tinta-secundaria);
-}
-
-.leyenda-punto {
-  width: 9px;
-  height: 9px;
-  flex-shrink: 0;
-  border-radius: 2px;
-}
-
-.grafico-vacio {
-  margin: 0;
-  font-size: 13px;
-  color: var(--tinta-muted);
-}
-
-.barra-fila {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 5px 0;
-}
-
-.barra-etiqueta {
-  width: 92px;
-  flex-shrink: 0;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--tinta-secundaria);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.barra-pista {
-  flex: 1;
-  height: 14px;
-  background: var(--gridline-tabla);
-  border-radius: 4px;
-  overflow: hidden;
-  transition: background var(--transicion);
-}
-
-.barra-fila:hover .barra-pista { background: var(--gridline); }
-
-.barra-valor {
-  height: 100%;
-  border-radius: 4px;
-  transition: width 320ms ease;
-}
-
-.barra-numero {
-  width: 42px;
-  flex-shrink: 0;
-  text-align: right;
-  font-size: 12.5px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  color: var(--tinta-primaria);
-}
-
-.grafico-tooltip {
-  position: fixed;
-  z-index: 200;
-  pointer-events: none;
-  background: var(--tinta-primaria);
-  color: var(--superficie);
-  font-size: 12px;
-  font-weight: 600;
-  padding: 6px 10px;
-  border-radius: 5px;
-  box-shadow: var(--sombra-flotante);
-  white-space: nowrap;
-}
-
 /* ---------- Filtros ---------- */
 
 .barra-filtros {
+  flex-shrink: 0;
   display: flex;
   align-items: flex-end;
   gap: 16px;
-  margin: 0 32px;
-  padding: 14px 18px;
+  padding: 12px 16px;
   background: var(--superficie);
   border: 1px solid var(--gridline);
   border-radius: var(--radio);
-  flex-wrap: wrap;
 }
 
 /* Chips de filtros activos: resumen legible de que esta filtrado en este
    momento, con boton para sacar cada uno o "Limpiar todo" (modelo UX
-   provisto por el usuario, 2026-09-19). */
+   provisto por el usuario, 2026-09-19). Sin chips no ocupa lugar. */
 .filtros-activos {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
-  margin: 0 32px;
-  min-height: 20px;
 }
+
+.filtros-activos:empty { display: none; }
 
 .filtros-activos-etiqueta {
   font-size: 12px;
@@ -477,69 +322,78 @@ body {
 }
 
 .filtro {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 4px;
 }
 
-.filtro label {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--tinta-muted);
+.filtro-buscador { flex: 2; }
+
+.filtro > label {
+  font-size: 12px;
   font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--tinta-secundaria);
 }
 
-.filtro select,
 .filtro input[type="text"] {
-  height: 40px;
-  padding: 0 10px;
-  border: 1px solid var(--gridline);
+  width: 100%;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--borde-control);
   border-radius: var(--radio-chico);
   font-family: inherit;
   font-size: 14px;
   color: var(--tinta-primaria);
-  min-width: 160px;
+  background: var(--superficie);
   transition: border-color var(--transicion), box-shadow var(--transicion);
 }
 
-.filtro select:focus,
+.filtro input[type="text"]::placeholder { color: #8c887e; }
+.filtro input[type="text"]:hover { border-color: var(--acento); }
+
 .filtro input[type="text"]:focus,
-.multiselect-boton:focus {
+.multiselect-boton:focus-visible {
   outline: none;
   border-color: var(--acento);
   box-shadow: 0 0 0 3px var(--acento-fondo);
 }
 
-.filtro-buscador input { min-width: 220px; }
-
 .multiselect { position: relative; }
 
+/* Desplegable propio (no el <select> nativo): flecha en el color de acento,
+   con tamano fijo -- sin background-size el SVG (solo viewBox) se estira. */
 .multiselect-boton {
-  min-width: 180px;
-  height: 40px;
+  width: 100%;
+  height: 38px;
   text-align: left;
-  padding: 0 30px 0 10px;
-  border: 1px solid var(--gridline);
+  padding: 0 32px 0 12px;
+  border: 1px solid var(--borde-control);
   border-radius: var(--radio-chico);
+  font-family: inherit;
   font-size: 14px;
-  background: var(--superficie) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath fill='%2355554d' d='M1 1l5 5 5-5'/%3E%3C/svg%3E") no-repeat right 10px center;
+  background: var(--superficie) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5l5-5' fill='none' stroke='%232e5e7e' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 12px center;
+  background-size: 12px 8px;
   cursor: pointer;
   color: var(--tinta-primaria);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  transition: border-color var(--transicion);
+  transition: border-color var(--transicion), box-shadow var(--transicion);
 }
 
-.multiselect-boton:hover { border-color: var(--tinta-muted); }
+.multiselect-boton:hover { border-color: var(--acento); }
 
 .multiselect-panel {
   position: absolute;
   top: calc(100% + 6px);
   left: 0;
   z-index: 20;
-  min-width: 260px;
+  min-width: 100%;
+  width: max-content;
   max-width: 340px;
   background: var(--superficie);
   border: 1px solid var(--gridline);
@@ -588,8 +442,6 @@ body {
   gap: 8px;
   padding: 5px 6px;
   font-size: 13px;
-  font-weight: normal;
-  text-transform: none;
   color: var(--tinta-primaria);
   border-radius: 4px;
   cursor: pointer;
@@ -600,137 +452,246 @@ body {
 .multiselect-opcion input { flex-shrink: 0; accent-color: var(--acento); }
 .multiselect-opcion span { overflow-wrap: anywhere; }
 
-.filtro-check {
-  flex-direction: row;
-  align-items: center;
-  gap: 6px;
+/* ---------- KPIs ---------- */
+
+.kpis {
+  flex-shrink: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
 }
 
-.filtro-check label {
+.kpi {
+  --kpi-color: var(--tinta-primaria);
+  --kpi-texto: var(--tinta-primaria);
+  position: relative;
   display: flex;
-  align-items: center;
-  gap: 7px;
-  text-transform: none;
-  font-size: 13px;
-  font-weight: normal;
-  color: var(--tinta-primaria);
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
   cursor: pointer;
-}
-
-.filtro-check input { accent-color: var(--acento); width: 15px; height: 15px; }
-
-.filtro-acciones {
-  margin-left: auto;
-  display: flex;
-  gap: 10px;
-  align-self: center;
-}
-
-.filtro-acciones button {
-  height: 40px;
-  background: var(--superficie);
-  color: var(--tinta-primaria);
-  border: 1px solid var(--gridline);
-  padding: 0 15px;
-  border-radius: var(--radio-chico);
-  cursor: pointer;
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 500;
-  transition: border-color var(--transicion), transform 100ms ease;
-}
-
-.filtro-acciones button:hover { border-color: var(--tinta-muted); }
-.filtro-acciones button:active { transform: scale(0.97); }
-
-/* ---------- Tabla ---------- */
-
-main {
-  padding: 18px 32px 56px;
-}
-
-.tabla-card {
+  padding: 12px 16px 10px;
   background: var(--superficie);
   border: 1px solid var(--gridline);
   border-radius: var(--radio);
+  overflow: hidden;
+  font-family: inherit;
+  color: var(--tinta-secundaria);
+  transition: border-color var(--transicion), background var(--transicion), transform 100ms ease;
+}
+
+.kpi::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 4px;
+  background: var(--kpi-color);
+}
+
+.kpi:hover { border-color: var(--acento); }
+.kpi:active { transform: scale(0.99); }
+.kpi:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+.kpi.kpi-activo { border-color: var(--acento); background: var(--acento-fondo); }
+
+.kpi-critico { --kpi-color: var(--estado-critico); --kpi-texto: var(--estado-critico-texto); }
+.kpi-normal { --kpi-color: var(--estado-bien); --kpi-texto: var(--estado-bien); }
+.kpi-sobrestock { --kpi-color: var(--estado-sobrestock); --kpi-texto: var(--estado-sobrestock-texto); }
+
+.kpi-etiqueta {
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Punto de estado junto al titulo de "Riesgo de quiebre"; el pulso solo se
+   activa si el usuario no pidio reducir movimiento (ver mas abajo). */
+.kpi-critico .kpi-etiqueta::before {
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: var(--estado-critico);
+}
+
+.kpi-fila {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.kpi-valor {
+  font-family: var(--fuente-display);
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1.05;
+  color: var(--kpi-texto);
+  font-variant-numeric: tabular-nums;
+}
+
+.kpi-cta {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--acento);
+  white-space: nowrap;
+}
+
+.kpi-detalle { font-size: 13px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .kpi {
+    animation: kpi-entrada 500ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    animation-delay: calc(var(--i, 0) * 80ms);
+  }
+
+  .kpi-critico .kpi-etiqueta::before { animation: pulso 2.4s ease-in-out infinite; }
+}
+
+@keyframes kpi-entrada {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes pulso {
+  50% { opacity: 0.4; }
+}
+
+/* ---------- Botones de accion ---------- */
+
+.btn-primario,
+.btn-secundario {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: var(--radio-chico);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transicion), border-color var(--transicion), transform 100ms ease;
+}
+
+.btn-primario:active,
+.btn-secundario:active { transform: scale(0.97); }
+
+.btn-primario {
+  background: var(--acento);
+  border: 1px solid var(--acento);
+  color: #fff;
+}
+
+.btn-primario:hover { background: var(--acento-hover); border-color: var(--acento-hover); }
+
+.btn-secundario {
+  background: transparent;
+  border: 1px solid var(--acento);
+  color: var(--acento);
+}
+
+.btn-secundario:hover { background: var(--acento-fondo); }
+
+.btn-primario:focus-visible,
+.btn-secundario:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+
+.check-toggle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  color: var(--tinta-secundaria);
+  cursor: pointer;
+}
+
+.check-toggle input { accent-color: var(--acento); width: 15px; height: 15px; }
+
+/* ---------- Tabla ---------- */
+
+.tabla-card {
+  flex: 1;
+  min-height: 360px;
   display: flex;
   flex-direction: column;
+  background: var(--superficie);
+  border: 1px solid var(--gridline);
+  border-radius: var(--radio);
   overflow: hidden;
 }
 
 .tabla-toolbar {
   flex-shrink: 0;
-  padding: 14px 18px;
-  border-bottom: 1px solid var(--gridline-tabla);
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--gridline);
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
 }
 
-.tabla-toolbar-resumen {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-  flex-wrap: wrap;
+.tabla-toolbar-titulo {
+  margin: 0;
+  font-family: var(--fuente-display);
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.2;
 }
 
-.tabla-toolbar-cantidad {
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.tabla-toolbar-orden {
-  font-size: 12px;
+.tabla-toolbar-subtitulo {
+  margin: 2px 0 0;
+  font-size: 13px;
   color: var(--tinta-secundaria);
 }
 
 .tabla-toolbar-acciones {
   display: flex;
+  align-items: center;
   gap: 10px;
   flex-wrap: wrap;
 }
 
-.tabla-scroll { overflow-x: auto; }
+.tabla-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
 
 table {
-  width: auto;
-  table-layout: auto;
+  width: 100%;
   border-collapse: collapse;
 }
+
+/* Tabla principal: anchos fijos por colgroup (suman 100%) para que ocupe
+   todo el ancho; la descripcion se corta con puntos suspensivos. */
+#tabla-stock { table-layout: fixed; }
 
 thead th {
   position: sticky;
   top: 0;
-  background: #faf9f5;
+  z-index: 2;
+  background: var(--encabezado-tabla);
   color: var(--tinta-secundaria);
   text-align: left;
-  padding: 11px 14px;
+  padding: 10px 12px;
   font-weight: 600;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  border-bottom: 1px solid var(--gridline-tabla);
-  cursor: pointer;
-  /* Los encabezados numericos (ej. "DIAS STOCK C/TRANSITO") pueden partirse
-     en 2 lineas -- si no, un titulo largo obliga a toda la columna a ser
-     tan ancha como el titulo, aunque los valores sean cortos ("0,00"). */
-  white-space: nowrap;
+  font-size: 13px;
+  line-height: 1.25;
+  border-bottom: 1px solid var(--gridline);
   user-select: none;
   transition: color var(--transicion), background var(--transicion);
 }
 
-thead th:hover { color: var(--tinta-primaria); background: var(--gridline-tabla); }
+#tabla-stock thead th,
+#tabla-stock-general thead th { cursor: pointer; }
+#tabla-stock thead th:hover,
+#tabla-stock-general thead th:hover { color: var(--tinta-primaria); background: var(--gridline); }
 
-thead th.num {
-  text-align: right;
-  white-space: normal;
-  max-width: 108px;
-  line-height: 1.3;
-}
+thead th.num { text-align: right; }
 
-th.col-dot { width: 26px; padding-right: 0; }
+th.col-dot { padding-right: 0; }
 
 /* La columna que ordena la tabla en este momento queda resaltada de punta
    a punta (encabezado + celdas), en vez de tintar toda la fila -- asi se
@@ -738,7 +699,7 @@ th.col-dot { width: 26px; padding-right: 0; }
    su estado real (el punto de la 1ra columna), no por un color de fondo
    que compite con el resto de la info. */
 thead th.orden-activo, tbody td.orden-activo {
-  background: #f1efe8;
+  background: #e6e3d9;
 }
 
 thead th.orden-activo { color: var(--tinta-primaria); font-weight: 700; }
@@ -746,40 +707,56 @@ thead th.orden-activo { color: var(--tinta-primaria); font-weight: 700; }
 thead th.orden-activo::after { content: " \25B2"; font-size: 10px; }
 thead th.orden-activo.orden-desc::after { content: " \25BC"; font-size: 10px; }
 
+/* En las columnas angostas y numericas la flecha va fija a la derecha del
+   encabezado; inline caia sola a una 2da linea ("Dias de stock" + flecha). */
+thead th.num.orden-activo { padding-right: 24px; }
+thead th.num.orden-activo::after {
+  content: "\25B2";
+  position: absolute;
+  right: 9px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+thead th.num.orden-activo.orden-desc::after { content: "\25BC"; }
+
 tbody td {
-  padding: 12px 14px;
-  border-top: 1px solid var(--gridline-tabla);
-  white-space: nowrap;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--gridline-tabla);
+  vertical-align: middle;
 }
 
-tbody td.num {
-  text-align: right;
-  font-variant-numeric: tabular-nums;
-  /* Cap de ancho: sin esto, un solo articulo con un valor grande (ej.
-     stock de 243.343 bultos en un caso real) estira la columna entera
-     para las otras 800+ filas que muestran "0,00". El valor completo
-     sigue disponible en el title (ver app.js::valorCeldaTexto). */
-  max-width: 108px;
+#tabla-stock tbody td {
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-tbody td.orden-activo { font-size: 15px; font-weight: 600; }
+tbody td.num,
+thead th.num { font-variant-numeric: tabular-nums; }
 
-tbody tr { transition: background var(--transicion); }
-tbody tr:hover { background: var(--plano-pagina); }
-tbody tr:hover td.orden-activo { background: #eae7de; }
+tbody td.num { text-align: right; }
 
-/* Punto de estado en la 1ra columna (angosta): reemplaza al tinte de fila
-   completa + franja de color que se usaba antes -- el color de riesgo se
-   lee ahi y, para dias_stock/dias_stock_c_transito, tambien como texto en
-   negrita del mismo color (ver mas abajo), nunca como fondo de la fila. */
+tbody td.orden-activo { font-weight: 600; }
+
+tbody tr:nth-child(even) { background: var(--superficie-2); }
+tbody tr:hover { background: var(--acento-fondo); }
+tbody tr:hover td.orden-activo { background: #d5e2ea; }
+
+/* position: relative ancla el texto .sr-only (absolute) a la celda; sin eso
+   su bloque contenedor seria la pagina y sus ~800 copias estirarian el
+   scroll del documento por fuera de .tabla-scroll. */
+td.col-dot { padding-right: 0; position: relative; }
+
+/* Punto de estado en la 1ra columna (angosta): el color de riesgo se lee
+   ahi y, para dias_stock, tambien como texto en negrita del mismo color
+   (ver mas abajo), nunca como fondo de la fila. El estado no depende solo
+   del color: el punto lleva texto para lectores de pantalla y title. */
 .punto-estado {
   display: block;
-  width: 9px;
-  height: 9px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
-  background: var(--tinta-muted);
+  background: var(--estado-neutro);
 }
 
 .punto-estado.pe-rojo { background: var(--estado-critico); }
@@ -787,71 +764,75 @@ tbody tr:hover td.orden-activo { background: #eae7de; }
 .punto-estado.pe-verde { background: var(--estado-bien); }
 .punto-estado.pe-sobrestock { background: var(--estado-sobrestock); }
 
-/* Texto en negrita del color de riesgo, solo en las columnas de dias de
-   stock (son las que ese riesgo describe) -- independiente de cual
-   columna este ordenando la tabla en este momento. */
-tbody tr.semaforo-rojo td.col-dias { color: var(--estado-critico-texto); font-weight: 600; }
-tbody tr.semaforo-amarillo td.col-dias { color: var(--estado-atencion); font-weight: 600; }
-tbody tr.semaforo-sobrestock td.col-dias { color: var(--estado-sobrestock-texto); font-weight: 600; }
+/* Texto en negrita del color de riesgo, solo en "Dias de stock" (es la
+   columna que ese riesgo describe). Las filas sin venta (S/V, —) se leen
+   con el mismo contraste que el resto: nunca se atenuan con opacity. */
+tbody td.col-dias { font-weight: 600; }
+tbody tr.semaforo-rojo td.col-dias { color: var(--estado-critico-texto); }
+tbody tr.semaforo-amarillo td.col-dias { color: var(--estado-atencion); }
+tbody tr.semaforo-verde td.col-dias { color: var(--estado-bien); }
+tbody tr.semaforo-sobrestock td.col-dias { color: var(--estado-sobrestock-texto); }
+tbody tr.semaforo-neutro td.col-dias { color: var(--estado-neutro-texto); }
 
-.icono-transito {
-  display: inline-block;
-  width: 14px;
-  height: 14px;
-  vertical-align: -2px;
-  margin-left: 4px;
-  color: var(--acento);
-  cursor: help;
+/* Quiebre cubierto: fila critica con transito > 0. Sin esta marca, el
+   quiebre es real (no viene nada en camino). */
+.transito-cubierto { color: var(--acento); font-weight: 700; }
+
+/* Novedad: 2da linea bajo la descripcion, solo si el articulo tiene una. */
+.novedad {
+  display: block;
+  font-style: italic;
+  font-size: 13px;
+  color: var(--aviso);
+  white-space: normal;
 }
 
-/* Transicion de filas al filtrar/ordenar (pedido del usuario, 2026-09-18):
-   cada fila entra con un fade + slide corto en vez de cambiar de golpe. El
-   escalonado (animation-delay) lo pone app.js por fila, acotado a las
-   primeras ~24 para que listas largas no tarden "visualmente" en aparecer. */
+/* Transicion de filas al filtrar/ordenar: solo las primeras ~24 (las que se
+   ven sin scrollear) entran con fade + slide corto; animar las 833 filas
+   a la vez es pesado y no aporta nada. El escalonado lo pone app.js. */
 @keyframes fila-aparece {
   from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-#cuerpo-tabla tr.fila-nueva {
-  animation: fila-aparece 260ms ease both;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  #cuerpo-tabla tr.fila-nueva { animation: none; }
+@media (prefers-reduced-motion: no-preference) {
+  #cuerpo-tabla tr.fila-nueva { animation: fila-aparece 260ms ease both; }
 }
 
 .totales {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 10;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 16px;
-  padding: 12px 28px;
-  background: var(--superficie);
-  border-top: 1px solid var(--gridline);
-  box-shadow: 0 -2px 10px rgba(11, 11, 11, 0.06);
-  color: var(--tinta-muted);
-  font-size: 12.5px;
+  padding: 0 4px;
+  color: var(--tinta-secundaria);
+  font-size: 13px;
 }
 
 .totales .resumen-riesgo {
   padding-left: 16px;
-  border-left: 1px solid var(--gridline);
-  color: var(--tinta-secundaria);
+  border-left: 1px solid var(--borde-control);
 }
 
 .totales .resumen-riesgo strong { color: var(--estado-critico); }
+
+.totales .leyenda { margin-left: auto; }
+
+/* ---------- Stock General (/stock-general): una fila por codigo, una
+   columna por deposito; misma anatomia de tabla que la vista principal ---------- */
+
+#tabla-stock-general td.novedad-celda {
+  font-style: italic;
+  color: var(--aviso);
+}
 
 /* ---------- Toast ---------- */
 
 .toast {
   position: fixed;
-  right: 28px;
-  bottom: 74px;
+  right: 24px;
+  bottom: 24px;
   z-index: 100;
   background: var(--tinta-primaria);
   color: white;
@@ -864,6 +845,8 @@ tbody tr.semaforo-sobrestock td.col-dias { color: var(--estado-sobrestock-texto)
   gap: 10px;
   animation: entrar-toast 200ms ease;
 }
+
+.toast[hidden] { display: none; }
 
 .toast.toast-error { background: var(--estado-critico); }
 .toast.toast-saliendo { animation: salir-toast 200ms ease forwards; }
@@ -885,29 +868,56 @@ tbody tr.semaforo-sobrestock td.col-dias { color: var(--estado-sobrestock-texto)
 
 .encabezado-impresion { display: none; }
 
+/* Nueve columnas no entran bien en hoja vertical: se propone horizontal por
+   defecto (el usuario puede cambiarla en el dialogo de impresion). */
+@page { size: A4 landscape; margin: 10mm; }
+
 @media print {
-  .barra-superior, .avisos, .kpis, .graficos, .barra-filtros,
-  .filtros-activos, .tabla-toolbar, .totales, .toast, .grafico-tooltip {
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  .barra-superior, .avisos, .kpis, .barra-filtros,
+  .filtros-activos, .tabla-toolbar, .totales, .toast {
     display: none !important;
   }
 
-  body { background: #fff; }
+  body { display: block; height: auto; background: #fff; }
 
-  main { padding: 0; overflow: visible; }
+  .contenedor { display: block; padding: 0; }
 
-  .tabla-card { border: none; }
+  .tabla-card { min-height: 0; border: none; overflow: visible; }
 
-  table {
-    width: 100%;
+  .tabla-scroll { max-height: none; overflow: visible; }
+
+  thead { display: table-header-group; }
+  thead th { position: static; }
+  thead th.orden-activo::after { display: none; }
+  thead th.num.orden-activo { padding-right: 6px; }
+  tr { break-inside: avoid; }
+
+  /* En papel nada se corta con "...": la descripcion pasa a otra linea y las
+     cifras nunca se recortan. Anchos propios de impresion (suman 100 %; los
+     !important pisan el style inline del colgroup): mas lugar para las cifras
+     y para el codigo, que en pantalla sobra. */
+  #tabla-stock thead th { font-size: 10.5px; padding: 6px; }
+  #tabla-stock tbody td {
+    padding: 4px 6px;
+    font-size: 10.5px;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    overflow-wrap: anywhere;
   }
-
-  thead th { position: static; background: #faf9f5 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-
-  tbody td.orden-activo,
-  tbody tr.semaforo-rojo td.col-dias, tbody tr.semaforo-amarillo td.col-dias, tbody tr.semaforo-sobrestock td.col-dias {
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
+  #tabla-stock tbody td.num { white-space: nowrap; }
+  #tabla-stock .novedad { font-size: 10px; }
+  #tabla-stock col:nth-child(1) { width: 2% !important; }
+  #tabla-stock col:nth-child(2) { width: 7% !important; }
+  #tabla-stock col:nth-child(3) { width: 33% !important; }
+  #tabla-stock col:nth-child(4) { width: 6% !important; }
+  #tabla-stock col:nth-child(5) { width: 11% !important; }
+  #tabla-stock col:nth-child(6) { width: 11% !important; }
+  #tabla-stock col:nth-child(7) { width: 8% !important; }
+  #tabla-stock col:nth-child(8) { width: 11% !important; }
+  #tabla-stock col:nth-child(9) { width: 11% !important; }
 
   .encabezado-impresion {
     display: block;
@@ -936,7 +946,7 @@ tbody tr.semaforo-sobrestock td.col-dias { color: var(--estado-sobrestock-texto)
   .encabezado-impresion-fecha {
     margin-top: 4px;
     font-size: 11px;
-    color: var(--tinta-muted);
+    color: var(--tinta-secundaria);
   }
 
   .encabezado-impresion-filtros {

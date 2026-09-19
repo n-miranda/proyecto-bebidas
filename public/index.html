@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Unificador de Stock — Bebidas</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231B1B18'/%3E%3Ctext x='16' y='21' font-family='sans-serif' font-weight='700' font-size='13' fill='%23A32B1F' text-anchor='middle'%3ETR%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap">
   <link rel="stylesheet" href="/static/estilos.css">
 </head>
@@ -20,6 +22,9 @@
     <div class="info-actualizacion">
       <span id="fecha-actualizacion">Cargando...</span>
       <span id="ventana-ventas" class="ventana-ventas"></span>
+      <!-- Chip colapsable con las advertencias de calidad de datos: lo arma
+           app.js::mostrarAvisos; sin avisos queda oculto. -->
+      <div id="avisos" hidden></div>
       <span class="etiqueta-solo-lectura" title="Este sitio muestra una foto fija publicada manualmente, no procesa Excel en vivo">Solo lectura</span>
     </div>
   </header>
@@ -37,120 +42,112 @@
     <div class="encabezado-impresion-filtros" id="encabezado-impresion-filtros"></div>
   </div>
 
-  <div id="avisos" class="avisos" hidden></div>
-
-  <div class="barra-filtros">
-    <div class="filtro">
-      <label>Depósito</label>
-      <div class="multiselect" id="multiselect-deposito">
-        <button type="button" class="multiselect-boton">Todos</button>
-        <div class="multiselect-panel" hidden>
-          <div class="multiselect-acciones">
-            <button type="button" data-accion="todos">Marcar todos</button>
-            <button type="button" data-accion="ninguno">Desmarcar todos</button>
+  <main class="contenedor">
+    <div class="barra-filtros">
+      <div class="filtro">
+        <label>Depósito</label>
+        <div class="multiselect" id="multiselect-deposito">
+          <button type="button" class="multiselect-boton">Todos</button>
+          <div class="multiselect-panel" hidden>
+            <div class="multiselect-acciones">
+              <button type="button" data-accion="todos">Marcar todos</button>
+              <button type="button" data-accion="ninguno">Desmarcar todos</button>
+            </div>
+            <div class="multiselect-opciones"></div>
           </div>
-          <div class="multiselect-opciones"></div>
         </div>
       </div>
-    </div>
-    <div class="filtro">
-      <label>Clúster</label>
-      <div class="multiselect" id="multiselect-cluster">
-        <button type="button" class="multiselect-boton">Todos</button>
-        <div class="multiselect-panel" hidden>
-          <div class="multiselect-acciones">
-            <button type="button" data-accion="todos">Marcar todos</button>
-            <button type="button" data-accion="ninguno">Desmarcar todos</button>
+      <div class="filtro">
+        <label>Clúster</label>
+        <div class="multiselect" id="multiselect-cluster">
+          <button type="button" class="multiselect-boton">Todos</button>
+          <div class="multiselect-panel" hidden>
+            <div class="multiselect-acciones">
+              <button type="button" data-accion="todos">Marcar todos</button>
+              <button type="button" data-accion="ninguno">Desmarcar todos</button>
+            </div>
+            <div class="multiselect-opciones"></div>
           </div>
-          <div class="multiselect-opciones"></div>
+        </div>
+      </div>
+      <div class="filtro filtro-buscador">
+        <label for="filtro-buscador">Buscar por código o descripción</label>
+        <input id="filtro-buscador" type="text" placeholder="Ej.: 100234 o gaseosa cola">
+      </div>
+      <div class="filtro">
+        <label>Columnas</label>
+        <div class="multiselect" id="multiselect-columnas">
+          <button type="button" class="multiselect-boton">Todas</button>
+          <div class="multiselect-panel" hidden>
+            <div class="multiselect-acciones">
+              <button type="button" data-accion="todos">Marcar todos</button>
+              <button type="button" data-accion="ninguno">Desmarcar todos</button>
+            </div>
+            <div class="multiselect-opciones"></div>
+          </div>
         </div>
       </div>
     </div>
-    <div class="filtro filtro-buscador">
-      <label for="filtro-buscador">Buscar por código o descripción</label>
-      <input id="filtro-buscador" type="text" placeholder="Ej.: 100234 o gaseosa cola">
-    </div>
-    <div class="multiselect multiselect-columnas-envoltorio" id="multiselect-columnas">
-      <button type="button" class="multiselect-boton">Todas</button>
-      <div class="multiselect-panel" hidden>
-        <div class="multiselect-acciones">
-          <button type="button" data-accion="todos">Marcar todos</button>
-          <button type="button" data-accion="ninguno">Desmarcar todos</button>
-        </div>
-        <div class="multiselect-opciones"></div>
+
+    <div class="filtros-activos" id="filtros-activos"></div>
+
+    <section class="kpis" id="kpis" aria-label="Resumen de stock (click para filtrar)">
+      <div class="kpi kpi-total" data-estado="" role="button" tabindex="0" style="--i:0">
+        <span class="kpi-etiqueta">Artículos filtrados</span>
+        <span class="kpi-fila"><span class="kpi-valor" id="kpi-total">0</span></span>
+        <span class="kpi-detalle">de <span id="kpi-total-general">0</span> totales · <span id="kpi-sin-venta">0</span> sin dato de venta</span>
       </div>
-    </div>
-  </div>
+      <div class="kpi kpi-critico" data-estado="semaforo-rojo" role="button" tabindex="0" style="--i:1">
+        <span class="kpi-etiqueta">Riesgo de quiebre</span>
+        <span class="kpi-fila"><span class="kpi-valor" id="kpi-rojo">0</span><span class="kpi-cta">Ver estos →</span></span>
+        <span class="kpi-detalle"><span id="kpi-detalle-rojo">Riesgo inmediato</span> · <span id="kpi-atencion">0</span> en atención</span>
+      </div>
+      <div class="kpi kpi-normal" data-estado="semaforo-verde" role="button" tabindex="0" style="--i:2">
+        <span class="kpi-etiqueta">Normal</span>
+        <span class="kpi-fila"><span class="kpi-valor" id="kpi-verde">0</span><span class="kpi-cta">Ver estos →</span></span>
+        <span class="kpi-detalle" id="kpi-detalle-verde">Cobertura adecuada</span>
+      </div>
+      <div class="kpi kpi-sobrestock" data-estado="semaforo-sobrestock" role="button" tabindex="0" style="--i:3">
+        <span class="kpi-etiqueta">Sobrestock</span>
+        <span class="kpi-fila"><span class="kpi-valor" id="kpi-sobrestock">0</span><span class="kpi-cta">Ver estos →</span></span>
+        <span class="kpi-detalle" id="kpi-detalle-sobrestock">Exceso de cobertura</span>
+      </div>
+    </section>
 
-  <div class="filtros-activos" id="filtros-activos"></div>
-
-  <section class="kpis" id="kpis" aria-label="Resumen de stock (click para filtrar)">
-    <div class="kpi kpi-total" data-estado="" role="button" tabindex="0">
-      <span class="kpi-etiqueta">Artículos filtrados</span>
-      <span class="kpi-valor" id="kpi-total">0</span>
-      <span class="kpi-subtexto">de <span id="kpi-total-general">0</span> totales</span>
-    </div>
-    <div class="kpi kpi-critico" data-estado="semaforo-rojo" role="button" tabindex="0">
-      <span class="kpi-cabecera"><span class="kpi-punto"></span><span class="kpi-etiqueta">Riesgo de quiebre</span></span>
-      <span class="kpi-valor" id="kpi-rojo">0</span>
-      <span class="kpi-cta">Ver estos <span id="kpi-rojo-cta">0</span>
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-      </span>
-    </div>
-    <div class="kpi kpi-normal" data-estado="semaforo-verde" role="button" tabindex="0">
-      <span class="kpi-cabecera"><span class="kpi-punto"></span><span class="kpi-etiqueta">Normal</span></span>
-      <span class="kpi-valor" id="kpi-verde">0</span>
-      <span class="kpi-cta">Ver estos <span id="kpi-verde-cta">0</span>
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-      </span>
-    </div>
-    <div class="kpi kpi-sobrestock" data-estado="semaforo-sobrestock" role="button" tabindex="0">
-      <span class="kpi-cabecera"><span class="kpi-punto"></span><span class="kpi-etiqueta">Sobrestock</span></span>
-      <span class="kpi-valor" id="kpi-sobrestock">0</span>
-      <span class="kpi-cta">Ver estos <span id="kpi-sobrestock-cta">0</span>
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-      </span>
-    </div>
-  </section>
-
-  <section class="graficos" id="graficos" aria-label="Gráficos de resumen (según filtros aplicados)">
-    <div class="grafico-panel">
-      <h2 class="grafico-titulo">Artículos por depósito</h2>
-      <div class="grafico-cuerpo" id="grafico-deposito"></div>
-    </div>
-    <div class="grafico-panel">
-      <h2 class="grafico-titulo">Estado de riesgo</h2>
-      <div class="grafico-cuerpo" id="grafico-riesgo"></div>
-    </div>
-  </section>
-
-  <main>
     <div class="tabla-card">
       <div class="tabla-toolbar">
-        <div class="tabla-toolbar-resumen">
-          <span class="tabla-toolbar-cantidad"><span id="tabla-cantidad">0</span> artículos</span>
-          <span class="tabla-toolbar-orden" id="tabla-orden-desc"></span>
+        <div>
+          <h2 class="tabla-toolbar-titulo">Stock general</h2>
+          <p class="tabla-toolbar-subtitulo" id="tabla-subtitulo"></p>
         </div>
         <div class="tabla-toolbar-acciones">
-          <div class="filtro filtro-check">
-            <label>
-              <input id="filtro-sin-clasificar" type="checkbox">
-              Solo sin clasificar (<span id="contador-sin-clasificar">0</span>)
-            </label>
-          </div>
-          <button id="btn-stock-general" type="button">Stock general</button>
-          <button id="btn-exportar" type="button">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 19h16"/></svg>
-            Exportar <span id="btn-exportar-cantidad">0</span> filas a Excel
+          <label class="check-toggle">
+            <input id="filtro-sin-clasificar" type="checkbox">
+            <span>Solo sin clasificar (<span id="contador-sin-clasificar">0</span>)</span>
+          </label>
+          <button id="btn-stock-general" type="button" class="btn-primario" title="Una fila por código, una columna por depósito">Stock general</button>
+          <button id="btn-exportar-pdf" type="button" class="btn-secundario">
+            <span>Exportar <span id="btn-exportar-pdf-cantidad">0</span> filas a PDF</span>
           </button>
-          <button id="btn-exportar-pdf" type="button">
+          <button id="btn-exportar" type="button" class="btn-primario">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 19h16"/></svg>
-            Exportar <span id="btn-exportar-pdf-cantidad">0</span> filas a PDF
+            <span>Exportar <span id="btn-exportar-cantidad">0</span> filas a Excel</span>
           </button>
         </div>
       </div>
       <div class="tabla-scroll">
         <table id="tabla-stock">
+          <colgroup>
+            <col style="width: 3%">
+            <col data-campo="codigo" style="width: 8%">
+            <col data-campo="descripcion" style="width: 32%">
+            <col data-campo="deposito" style="width: 9%">
+            <col data-campo="stock_bultos" style="width: 9%">
+            <col data-campo="venta_promedio_bulto" style="width: 10%">
+            <col data-campo="dias_stock" style="width: 8%">
+            <col data-campo="transito_bultos" style="width: 9%">
+            <col data-campo="dias_stock_c_transito" style="width: 12%">
+          </colgroup>
           <thead>
             <tr>
               <th class="col-dot" aria-label="Estado"></th>
@@ -170,14 +167,12 @@
         </table>
       </div>
     </div>
+
+    <footer id="totales" class="totales"></footer>
   </main>
 
-  <footer id="totales" class="totales"></footer>
-
   <div id="toast" class="toast" role="status" hidden></div>
-  <div id="grafico-tooltip" class="grafico-tooltip" hidden></div>
 
-  <script src="/static/graficos.js"></script>
   <script src="/static/app.js"></script>
 </body>
 </html>
