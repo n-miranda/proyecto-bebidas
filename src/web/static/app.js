@@ -6,9 +6,9 @@
   const fmtDosDecimales = new Intl.NumberFormat("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   const COLUMNAS = [
-    { campo: "deposito", etiqueta: "Depósito" },
     { campo: "codigo", etiqueta: "Código" },
     { campo: "descripcion", etiqueta: "Descripción" },
+    { campo: "deposito", etiqueta: "Depósito" },
     { campo: "stock_bultos", etiqueta: "Stock (bultos)", num: true },
     { campo: "venta_promedio_bulto", etiqueta: "Venta prom. (bultos)", num: true },
     { campo: "dias_stock", etiqueta: "Días de stock", num: true },
@@ -16,9 +16,7 @@
     { campo: "dias_stock_c_transito", etiqueta: "Días stock c/tránsito", num: true },
   ];
 
-  // Paleta categorica validada (skill dataviz/references/palette.md, slots
-  // 1-4, orden fijo -- no ciclar ni reordenar por valor).
-  const PALETA_CATEGORICA = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100"];
+  const ETIQUETA_COLUMNA = Object.fromEntries(COLUMNAS.map((c) => [c.campo, c.etiqueta]));
 
   let articulos = [];
   let ordenCampo = "dias_stock";
@@ -30,8 +28,12 @@
   const avisosEl = document.getElementById("avisos");
   const totalesEl = document.getElementById("totales");
   const btnActualizar = document.getElementById("btn-actualizar");
+  const btnActualizarIcono = document.getElementById("btn-actualizar-icono");
+  const btnActualizarTexto = document.getElementById("btn-actualizar-texto");
   const btnExportar = document.getElementById("btn-exportar");
   const btnExportarPdf = document.getElementById("btn-exportar-pdf");
+  const btnExportarCantidadEl = document.getElementById("btn-exportar-cantidad");
+  const btnExportarPdfCantidadEl = document.getElementById("btn-exportar-pdf-cantidad");
   const btnStockGeneral = document.getElementById("btn-stock-general");
   const inputBuscador = document.getElementById("filtro-buscador");
   const checkSinClasificar = document.getElementById("filtro-sin-clasificar");
@@ -39,11 +41,20 @@
   const toastEl = document.getElementById("toast");
   const encabezadoImpresionFechaEl = document.getElementById("encabezado-impresion-fecha");
   const encabezadoImpresionFiltrosEl = document.getElementById("encabezado-impresion-filtros");
+  const filtrosActivosEl = document.getElementById("filtros-activos");
+  const tablaCantidadEl = document.getElementById("tabla-cantidad");
+  const tablaOrdenDescEl = document.getElementById("tabla-orden-desc");
+  const kpiTotalGeneralEl = document.getElementById("kpi-total-general");
   const kpiEls = {
     total: document.getElementById("kpi-total"),
     rojo: document.getElementById("kpi-rojo"),
     verde: document.getElementById("kpi-verde"),
     sobrestock: document.getElementById("kpi-sobrestock"),
+  };
+  const kpiCtaEls = {
+    rojo: document.getElementById("kpi-rojo-cta"),
+    verde: document.getElementById("kpi-verde-cta"),
+    sobrestock: document.getElementById("kpi-sobrestock-cta"),
   };
   const valorPrevioKpi = { total: 0, rojo: 0, verde: 0, sobrestock: 0 };
 
@@ -204,11 +215,9 @@
     "semaforo-sobrestock": "pe-sobrestock",
   };
 
-  function celdaDiasStock(art) {
-    const texto = valorCeldaTexto(art, "dias_stock");
+  function puntoEstado(art) {
     const clase = SUFIJO_PUNTO[claseSemaforo(art)];
-    const punto = clase ? `<span class="punto-estado ${clase}"></span>` : "";
-    return `${punto}${texto}`;
+    return `<span class="punto-estado${clase ? " " + clase : ""}" title="${escaparHtml(ETIQUETA_ESTADO[claseSemaforo(art)] || "Sin venta")}"></span>`;
   }
 
   function poblarFiltros() {
@@ -223,6 +232,7 @@
     contadorSinClasificarEl.textContent = fmtEntero.format(
       articulos.filter((a) => a.sin_clasificar).length
     );
+    kpiTotalGeneralEl.textContent = fmtEntero.format(articulos.length);
   }
 
   let filtroEstado = null; // null | "semaforo-rojo" | "semaforo-amarillo" | "semaforo-verde" | "semaforo-sobrestock"
@@ -260,6 +270,68 @@
     filtroEstado = (filtroEstado === estado) ? null : estado;
     render();
   }
+
+  // Resumen de filtros activos como chips removibles (modelo UX provisto
+  // por el usuario, 2026-09-19): asi se ve de un vistazo que esta filtrado
+  // sin tener que abrir cada multiselect, y se puede sacar uno solo.
+  function marcarTodos(multi) {
+    multi.setOpciones(multi.getOpciones());
+  }
+
+  function renderChipsFiltros() {
+    const chips = [];
+
+    if (multiDeposito.getSeleccion().size < multiDeposito.getOpciones().length) {
+      chips.push({
+        id: "deposito",
+        texto: `Depósito: ${[...multiDeposito.getSeleccion()].sort((a, b) => a.localeCompare(b, "es")).join(", ") || "ninguno"}`,
+      });
+    }
+    if (multiCluster.getOpciones().length > 0 && multiCluster.getSeleccion().size < multiCluster.getOpciones().length) {
+      chips.push({
+        id: "cluster",
+        texto: `Clúster: ${[...multiCluster.getSeleccion()].sort((a, b) => a.localeCompare(b, "es")).join(", ") || "ninguno"}`,
+      });
+    }
+    const busqueda = inputBuscador.value.trim();
+    if (busqueda) chips.push({ id: "busqueda", texto: `Búsqueda: "${busqueda}"` });
+    if (checkSinClasificar.checked) chips.push({ id: "sin-clasificar", texto: "Solo sin clasificar" });
+    if (filtroEstado) chips.push({ id: "estado", texto: `Estado: ${ETIQUETA_ESTADO[filtroEstado] || filtroEstado}` });
+
+    if (chips.length === 0) {
+      filtrosActivosEl.innerHTML = "";
+      return;
+    }
+
+    filtrosActivosEl.innerHTML =
+      '<span class="filtros-activos-etiqueta">Filtros activos:</span>' +
+      chips.map((c) => `
+        <span class="chip-filtro">
+          ${escaparHtml(c.texto)}
+          <button type="button" data-quitar="${c.id}" aria-label="Quitar filtro">×</button>
+        </span>`).join("") +
+      '<button type="button" class="btn-limpiar-filtros" data-quitar="todo">Limpiar todo</button>';
+  }
+
+  filtrosActivosEl.addEventListener("click", (ev) => {
+    const boton = ev.target.closest("[data-quitar]");
+    if (!boton) return;
+    switch (boton.dataset.quitar) {
+      case "deposito": marcarTodos(multiDeposito); break;
+      case "cluster": marcarTodos(multiCluster); break;
+      case "busqueda": inputBuscador.value = ""; break;
+      case "sin-clasificar": checkSinClasificar.checked = false; break;
+      case "estado": filtroEstado = null; break;
+      case "todo":
+        marcarTodos(multiDeposito);
+        marcarTodos(multiCluster);
+        inputBuscador.value = "";
+        checkSinClasificar.checked = false;
+        filtroEstado = null;
+        break;
+    }
+    render();
+  });
 
   document.querySelectorAll(".kpi[data-estado]").forEach((el) => {
     const estado = el.dataset.estado || null;
@@ -322,6 +394,7 @@
     for (const clave of Object.keys(kpiEls)) {
       animarNumero(kpiEls[clave], valorPrevioKpi[clave], conteo[clave]);
       valorPrevioKpi[clave] = conteo[clave];
+      if (kpiCtaEls[clave]) kpiCtaEls[clave].textContent = fmtEntero.format(conteo[clave]);
     }
     document.querySelectorAll(".kpi[data-estado]").forEach((el) => {
       const estado = el.dataset.estado || null;
@@ -340,26 +413,36 @@
     for (const a of filasSinEstado) {
       porDeposito.set(a.deposito, (porDeposito.get(a.deposito) || 0) + 1);
     }
+    // Una sola magnitud por deposito (cantidad de articulos) -- un solo
+    // color de acento, no una paleta categorica: no son "series" distintas,
+    // es un ranking de la misma medida.
     const datosDeposito = [...porDeposito.entries()]
       .sort((a, b) => a[0].localeCompare(b[0], "es"))
-      .map(([etiqueta, valor], i) => ({
-        etiqueta, valor, color: PALETA_CATEGORICA[i % PALETA_CATEGORICA.length],
-      }));
+      .map(([etiqueta, valor]) => ({ etiqueta, valor, color: "var(--acento)" }));
     window.Graficos.renderBarras("grafico-deposito", datosDeposito);
 
     const datosRiesgo = [
-      { etiqueta: "Crítico", valor: conteo.rojo, color: "var(--estado-critico)" },
+      { etiqueta: "Quiebre", valor: conteo.rojo, color: "var(--estado-critico)" },
       { etiqueta: "Normal", valor: conteo.verde, color: "var(--estado-bien)" },
-      { etiqueta: "Sobrestock", valor: conteo.sobrestock, color: "var(--estado-info)" },
+      { etiqueta: "Sobrestock", valor: conteo.sobrestock, color: "var(--estado-sobrestock)" },
     ];
-    window.Graficos.renderBarras("grafico-riesgo", datosRiesgo);
+    window.Graficos.renderSegmentado("grafico-riesgo", datosRiesgo);
+  }
+
+  function celda(campo, art, extraClase = "") {
+    const esNum = COLUMNAS.find((c) => c.campo === campo)?.num;
+    const activa = campo === ordenCampo;
+    const clases = [esNum ? "num" : "", extraClase, activa ? "orden-activo" : ""].filter(Boolean).join(" ");
+    const texto = valorCeldaTexto(art, campo);
+    const titleAttr = esNum ? ` title="${texto}"` : "";
+    return `<td data-campo="${campo}"${clases ? ` class="${clases}"` : ""}${titleAttr}>${texto}</td>`;
   }
 
   function render() {
     const filas = listaVisible();
 
     if (filas.length === 0) {
-      cuerpoTabla.innerHTML = '<tr><td colspan="8">No hay artículos que coincidan con los filtros.</td></tr>';
+      cuerpoTabla.innerHTML = '<tr><td colspan="9">No hay artículos que coincidan con los filtros.</td></tr>';
     } else {
       cuerpoTabla.innerHTML = filas.map((art, idx) => {
         const clase = claseSemaforo(art);
@@ -371,14 +454,15 @@
         const demora = Math.min(idx, 24) * 10;
         return `
       <tr class="${clase} fila-nueva" style="animation-delay: ${demora}ms">
-        <td data-campo="deposito">${art.deposito}</td>
-        <td data-campo="codigo">${art.codigo}</td>
-        <td data-campo="descripcion" title="${escaparHtml(art.descripcion)}">${art.descripcion}</td>
-        <td data-campo="stock_bultos" class="num" title="${valorCeldaTexto(art, "stock_bultos")}">${valorCeldaTexto(art, "stock_bultos")}</td>
-        <td data-campo="venta_promedio_bulto" class="num" title="${valorCeldaTexto(art, "venta_promedio_bulto")}">${valorCeldaTexto(art, "venta_promedio_bulto")}</td>
-        <td data-campo="dias_stock" class="num" title="${valorCeldaTexto(art, "dias_stock")}">${celdaDiasStock(art)}${icono}</td>
-        <td data-campo="transito_bultos" class="num" title="${valorCeldaTexto(art, "transito_bultos")}">${valorCeldaTexto(art, "transito_bultos")}</td>
-        <td data-campo="dias_stock_c_transito" class="num" title="${valorCeldaTexto(art, "dias_stock_c_transito")}">${valorCeldaTexto(art, "dias_stock_c_transito")}</td>
+        <td class="col-dot">${puntoEstado(art)}</td>
+        <td data-campo="codigo"${ordenCampo === "codigo" ? ' class="orden-activo"' : ""}>${art.codigo}</td>
+        <td data-campo="descripcion"${ordenCampo === "descripcion" ? ' class="orden-activo"' : ""} title="${escaparHtml(art.descripcion)}">${art.descripcion}</td>
+        <td data-campo="deposito"${ordenCampo === "deposito" ? ' class="orden-activo"' : ""}>${art.deposito}</td>
+        ${celda("stock_bultos", art)}
+        ${celda("venta_promedio_bulto", art)}
+        ${celda("dias_stock", art, "col-dias")}${icono}
+        ${celda("transito_bultos", art)}
+        ${celda("dias_stock_c_transito", art, "col-dias")}
       </tr>`;
       }).join("");
     }
@@ -386,6 +470,14 @@
     const filasSinEstado = filtrarSinEstado(articulos);
     const conteo = renderKPIs(filasSinEstado);
     renderGraficos(filasSinEstado, conteo);
+    renderChipsFiltros();
+
+    tablaCantidadEl.textContent = fmtEntero.format(filas.length);
+    tablaOrdenDescEl.textContent =
+      `ordenados por ${(ETIQUETA_COLUMNA[ordenCampo] || ordenCampo).toLowerCase()}, ` +
+      (ordenAscendente ? "de menor a mayor" : "de mayor a menor");
+    btnExportarCantidadEl.textContent = fmtEntero.format(filas.length);
+    btnExportarPdfCantidadEl.textContent = fmtEntero.format(filas.length);
 
     const textoBase = filtroEstado
       ? `${filas.length} artículos filtrados (filtro de estado activo — click de nuevo en el KPI para quitarlo)`
@@ -571,7 +663,8 @@
 
   btnActualizar.addEventListener("click", async () => {
     btnActualizar.disabled = true;
-    btnActualizar.innerHTML = '<span class="girando">⟳</span> Actualizando...';
+    btnActualizarIcono.classList.add("girando");
+    btnActualizarTexto.textContent = "Actualizando...";
     try {
       const resp = await fetch("/api/actualizar", { method: "POST" });
       if (!resp.ok) {
@@ -584,12 +677,13 @@
       mostrarToast("No se pudo actualizar: " + err.message, "error");
     } finally {
       btnActualizar.disabled = false;
-      btnActualizar.textContent = "Actualizar datos";
+      btnActualizarIcono.classList.remove("girando");
+      btnActualizarTexto.textContent = "Actualizar datos";
     }
   });
 
   cargarTodo().catch((err) => {
     mostrarToast("No se pudieron cargar los datos: " + err.message, "error");
-    cuerpoTabla.innerHTML = '<tr><td colspan="8">No se pudieron cargar los artículos.</td></tr>';
+    cuerpoTabla.innerHTML = '<tr><td colspan="9">No se pudieron cargar los artículos.</td></tr>';
   });
 })();

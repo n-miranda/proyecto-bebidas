@@ -77,5 +77,45 @@
     });
   }
 
-  window.Graficos = { renderBarras };
+  // Barra unica segmentada (proporcion que suma 100%, con leyenda debajo) --
+  // usada para "Estado de riesgo": mas compacta que una barra por categoria
+  // cuando lo que importa es la proporcion, no comparar magnitudes lado a
+  // lado (esa es la de "Articulos por deposito", que usa renderBarras).
+  function renderSegmentado(idContenedor, datos) {
+    const contenedor = document.getElementById(idContenedor);
+    if (!contenedor) return;
+
+    const total = datos.reduce((acc, d) => acc + d.valor, 0);
+    if (datos.length === 0 || total === 0) {
+      contenedor.innerHTML = '<p class="grafico-vacio">Sin artículos para los filtros actuales.</p>';
+      return;
+    }
+
+    const segmentos = datos.map((d) => {
+      const pct = (d.valor / total) * 100;
+      const tip = `${d.etiqueta}: ${fmt.format(d.valor)} (${pct.toFixed(1)}%)`;
+      return { ...d, pct, tip };
+    });
+
+    contenedor.innerHTML = `
+      <div class="grafico-segmentado">
+        ${segmentos.map((s) => `<div class="segmento" data-tooltip="${escaparHtml(s.tip)}" style="width: ${s.pct}%; background: ${s.color};"></div>`).join("")}
+      </div>
+      <div class="leyenda-segmentos">
+        ${segmentos.map((s) => `
+          <span class="leyenda-item">
+            <span class="leyenda-punto" style="background: ${s.color};"></span>
+            ${escaparHtml(s.etiqueta)} ${s.pct.toFixed(1).replace(".", ",")}%
+          </span>`).join("")}
+      </div>`;
+
+    contenedor.querySelectorAll(".segmento").forEach((seg) => {
+      const texto = seg.dataset.tooltip;
+      seg.addEventListener("mouseenter", (ev) => mostrarTooltip(ev, texto));
+      seg.addEventListener("mousemove", posicionarTooltip);
+      seg.addEventListener("mouseleave", ocultarTooltip);
+    });
+  }
+
+  window.Graficos = { renderBarras, renderSegmentado };
 })();

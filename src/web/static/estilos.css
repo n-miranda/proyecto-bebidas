@@ -1,48 +1,58 @@
 :root {
-  /* Tokens de marca -- paleta Quilmes (2026-09-18, a pedido del usuario).
-     Colores sacados del CSS real de quilmes.com.ar, no inventados:
-     #D50032 es su rojo dominante (botones, estados activos, hover),
-     #F7F0E6 su fondo crema, #031532/#0E2240 su tinta azul marino oscura.
-     Backup de la paleta anterior en backups/estilos_pre-quilmes_2026-09-18.css. */
-  --superficie: #fffdf9;
-  --plano-pagina: #F7F0E6;
-  --tinta-primaria: #031532;
-  --tinta-secundaria: #0e2240;
-  --tinta-muted: #6b7280;
-  --gridline: #e8ddc8;
-  --borde: rgba(3, 21, 50, 0.12);
-  --acento: #D50032;
-  --acento-hover: #a80028;
+  /* Paleta "Tablero de stock" (2026-09-19): implementa el mockup de
+     referencia provisto por el usuario (Vista principal-html.zip). Off-white
+     neutro + header casi negro + azul como unico acento interactivo; rojo/
+     verde/ambar quedan reservados al semaforo de riesgo, nunca al acento.
+     La paleta Quilmes anterior queda en
+     backups/estilos_pre-quilmes_2026-09-18.css por si hay que volver. */
+  --superficie: #ffffff;
+  --plano-pagina: #f5f4f0;
+  --tinta-primaria: #1b1b18;
+  --tinta-secundaria: #55554d;
+  --tinta-muted: #8a8977;
+  --gridline: #dedcd4;
+  --gridline-tabla: #efede6;
+  --borde: rgba(27, 27, 24, 0.10);
+  --acento: #2e5e7e;
+  --acento-hover: #1f425a;
+  --acento-fondo: #e6eef3;
+  --acento-borde: #c4d8e4;
 
-  --color-fondo-header: #031532;
-  --color-fondo-header-texto: #F7F0E6;
+  --color-fondo-header: #1b1b18;
+  --color-fondo-header-texto: #f5f4f0;
+  --marca-badge: #a32b1f;
 
-  --aviso: #92400e;
-  --aviso-fondo: #fef3c7;
+  --aviso: #7a4e0b;
+  --aviso-fondo: #fbeedb;
 
-  /* Paleta de estado (fija, no se tematiza -- es el semaforo de riesgo de
-     stock, no debe perder claridad por el rebranding). 'critico' se deja
-     en un rojo cercano al de marca pero no identico, para que un boton
-     Quilmes y una fila en riesgo de quiebre se sigan distinguiendo. */
-  --estado-bien: #0ca30c;
-  --estado-bien-fondo: #e9f8e9;
-  --estado-atencion: #b3790f;
-  --estado-atencion-fondo: #fef3d9;
-  --estado-critico: #d03b3b;
-  --estado-critico-fondo: #fbeaea;
-  --estado-info: #2a78d6;
-  --estado-info-fondo: #e9f1fc;
+  /* Semaforo de riesgo de stock (fijo, no se tematiza). Cada estado tiene
+     un tono "solido" (puntos, bordes) y uno "texto" mas oscuro para leer
+     bien sobre blanco -- ver marks-and-anatomy del skill dataviz. */
+  --estado-bien: #1f6a4c;
+  --estado-bien-fondo: #e7f1ec;
+  --estado-atencion: #8a6d1a;
+  --estado-atencion-fondo: #f5efdd;
+  --estado-critico: #a32b1f;
+  --estado-critico-texto: #8a2418;
+  --estado-critico-fondo: #f7e9e7;
+  --estado-sobrestock: #c77a18;
+  --estado-sobrestock-texto: #7a4e0b;
+  --estado-sobrestock-fondo: #faefdd;
 
-  --radio: 6px;
-  --sombra-flotante: 0 8px 24px rgba(3, 21, 50, 0.16);
+  --radio: 12px;
+  --radio-chico: 8px;
+  --sombra-flotante: 0 8px 24px rgba(27, 27, 24, 0.14);
   --transicion: 150ms ease;
+
+  --fuente-cuerpo: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --fuente-display: "Space Grotesk", var(--fuente-cuerpo);
 }
 
 * { box-sizing: border-box; }
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family: var(--fuente-cuerpo);
   background: var(--plano-pagina);
   color: var(--tinta-primaria);
   font-size: 14px;
@@ -52,45 +62,58 @@ body {
 /* ---------- Barra superior ---------- */
 
 .barra-superior {
+  height: 64px;
+  flex-shrink: 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: linear-gradient(120deg, var(--color-fondo-header) 0%, #0e2240 65%, #170a14 100%);
+  background: var(--color-fondo-header);
   color: var(--color-fondo-header-texto);
-  padding: 14px 28px;
+  padding: 0 32px;
 }
 
 .marca {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
 }
 
 .marca-icono {
   width: 30px;
   height: 30px;
   flex-shrink: 0;
+  border-radius: 7px;
+  background: var(--marca-badge);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--fuente-display);
+  font-weight: 700;
+  font-size: 13px;
 }
 
 .marca-texto {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  gap: 12px;
+}
+
+.marca-texto h1 {
+  font-family: var(--fuente-display);
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.2px;
+  margin: 0;
 }
 
 .marca-empresa {
-  font-size: 10.5px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.09em;
-  color: var(--acento);
-}
-
-.barra-superior h1 {
-  font-size: 19px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  margin: 0;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #33332e;
+  font-size: 12px;
+  font-weight: 500;
+  color: #e4e2da;
 }
 
 .info-actualizacion {
@@ -98,33 +121,36 @@ body {
   align-items: center;
   gap: 18px;
   font-size: 13px;
-  color: rgba(247, 240, 230, 0.65);
+  color: #b8b6ac;
 }
 
 .ventana-ventas {
   padding-left: 18px;
-  border-left: 1px solid rgba(247, 240, 230, 0.25);
+  border-left: 1px solid #4a4a43;
   cursor: help;
 }
 
 #btn-actualizar {
-  background: var(--acento);
-  color: white;
-  border: none;
-  padding: 9px 18px;
-  border-radius: var(--radio);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  color: #e4e2da;
+  border: 1px solid #4a4a43;
+  padding: 5px 14px;
+  border-radius: 999px;
   cursor: pointer;
-  font-size: 13px;
-  font-weight: 600;
-  transition: background var(--transicion), transform 100ms ease;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  transition: background var(--transicion), border-color var(--transicion), transform 100ms ease;
 }
 
-#btn-actualizar:hover { background: var(--acento-hover); }
+#btn-actualizar:hover { background: #33332e; border-color: #5a5a52; }
 #btn-actualizar:active { transform: scale(0.97); }
 #btn-actualizar:disabled { opacity: 0.6; cursor: default; transform: none; }
 
-#btn-actualizar .girando {
-  display: inline-block;
+#btn-actualizar-icono.girando {
   animation: girar 900ms linear infinite;
 }
 
@@ -162,96 +188,155 @@ body {
 /* ---------- KPIs ---------- */
 
 .kpis {
-  display: flex;
-  gap: 1px;
-  background: var(--gridline);
-  border-bottom: 1px solid var(--gridline);
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+  padding: 24px 32px 0;
 }
 
 .kpi {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: var(--superficie);
-  padding: 16px 24px;
-  cursor: pointer;
-  transition: background var(--transicion), box-shadow var(--transicion);
-  box-shadow: inset 0 -3px 0 0 transparent;
-}
-
-.kpi:hover { background: var(--plano-pagina); }
-.kpi:focus-visible { outline: 2px solid var(--acento); outline-offset: -2px; }
-
-.kpi-critico.kpi-activo { background: var(--estado-critico-fondo); box-shadow: inset 0 -3px 0 0 var(--estado-critico); }
-.kpi-atencion.kpi-activo { background: var(--estado-atencion-fondo); box-shadow: inset 0 -3px 0 0 var(--estado-atencion); }
-.kpi-normal.kpi-activo { background: var(--estado-bien-fondo); box-shadow: inset 0 -3px 0 0 var(--estado-bien); }
-.kpi-sobrestock.kpi-activo { background: var(--estado-info-fondo); box-shadow: inset 0 -3px 0 0 var(--estado-info); }
-.kpi-total.kpi-activo { background: var(--plano-pagina); box-shadow: inset 0 -3px 0 0 var(--acento); }
-
-.kpi-icono {
-  width: 22px;
-  height: 22px;
-  flex-shrink: 0;
-  color: var(--tinta-muted);
-}
-
-.kpi-critico .kpi-icono { color: var(--estado-critico); }
-.kpi-atencion .kpi-icono { color: var(--estado-atencion); }
-.kpi-normal .kpi-icono { color: var(--estado-bien); }
-.kpi-sobrestock .kpi-icono { color: var(--estado-info); }
-.kpi-total .kpi-icono { color: var(--acento); }
-
-.kpi-texto {
+  text-align: left;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 6px;
+  background: var(--superficie);
+  border: 1px solid var(--gridline);
+  border-radius: var(--radio);
+  padding: 16px 18px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color var(--transicion), box-shadow var(--transicion), transform 100ms ease;
 }
 
-.kpi-valor {
-  font-size: 26px;
-  font-weight: 700;
-  line-height: 1.1;
-  color: var(--tinta-primaria);
-  font-variant-numeric: proportional-nums;
+.kpi:hover { border-color: var(--tinta-muted); }
+.kpi:active { transform: scale(0.99); }
+.kpi:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+
+.kpi-critico.kpi-activo { border: 2px solid var(--estado-critico); padding: 15px 17px; }
+.kpi-atencion.kpi-activo { border: 2px solid var(--estado-atencion); padding: 15px 17px; }
+.kpi-normal.kpi-activo { border: 2px solid var(--estado-bien); padding: 15px 17px; }
+.kpi-sobrestock.kpi-activo { border: 2px solid var(--estado-sobrestock); padding: 15px 17px; }
+.kpi-total.kpi-activo { border: 2px solid var(--tinta-primaria); padding: 15px 17px; }
+
+.kpi-cabecera {
+  display: flex;
+  align-items: center;
+  gap: 7px;
 }
+
+.kpi-punto {
+  width: 9px;
+  height: 9px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: var(--tinta-muted);
+}
+
+.kpi-critico .kpi-punto { background: var(--estado-critico); }
+.kpi-atencion .kpi-punto { background: var(--estado-atencion); }
+.kpi-normal .kpi-punto { background: var(--estado-bien); }
+.kpi-sobrestock .kpi-punto { background: var(--estado-sobrestock); }
 
 .kpi-etiqueta {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--tinta-secundaria);
+}
+
+.kpi-critico .kpi-etiqueta { color: var(--estado-critico-texto); }
+
+.kpi-valor {
+  font-family: var(--fuente-display);
+  font-size: 34px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--tinta-primaria);
+}
+
+.kpi-critico .kpi-valor { color: var(--estado-critico-texto); }
+.kpi-atencion .kpi-valor { color: var(--estado-atencion); }
+.kpi-normal .kpi-valor { color: var(--tinta-primaria); }
+.kpi-sobrestock .kpi-valor { color: var(--tinta-primaria); }
+
+.kpi-subtexto {
   font-size: 12px;
   color: var(--tinta-secundaria);
 }
 
-.kpi-critico .kpi-valor { color: var(--estado-critico); }
-.kpi-atencion .kpi-valor { color: var(--estado-atencion); }
-.kpi-normal .kpi-valor { color: var(--estado-bien); }
-.kpi-sobrestock .kpi-valor { color: var(--estado-info); }
+.kpi-cta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--acento);
+}
+
+.kpi-critico .kpi-cta { color: var(--estado-critico); }
+
+.kpi-cta svg { flex-shrink: 0; }
 
 /* ---------- Graficos de resumen (dataviz skill: barras HTML/CSS, marca
    fina con extremos redondeados, rotulo directo + tooltip como capa
    adicional; se recalculan con cada filtro, ver app.js::renderGraficos) ---------- */
 
 .graficos {
-  display: flex;
-  gap: 16px;
-  padding: 4px 28px 18px;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(280px, 1fr));
+  gap: 18px;
+  padding: 0 32px;
 }
 
 .grafico-panel {
-  flex: 1 1 340px;
   background: var(--superficie);
+  border: 1px solid var(--gridline);
   border-radius: var(--radio);
-  padding: 16px 20px 18px;
-  box-shadow: 0 1px 3px rgba(11, 11, 11, 0.08);
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
 }
 
 .grafico-titulo {
-  margin: 0 0 12px;
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tinta-primaria);
+}
+
+/* Estado de riesgo: una sola barra segmentada (proporcion), no una barra
+   por categoria -- mas compacta para 3-4 franjas que suman el 100%. */
+.grafico-segmentado {
+  display: flex;
+  height: 26px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--gridline-tabla);
+}
+
+.grafico-segmentado .segmento { transition: width 320ms ease; }
+
+.leyenda-segmentos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+}
+
+.leyenda-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
   font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
   color: var(--tinta-secundaria);
+}
+
+.leyenda-punto {
+  width: 9px;
+  height: 9px;
+  flex-shrink: 0;
+  border-radius: 2px;
 }
 
 .grafico-vacio {
@@ -268,7 +353,7 @@ body {
 }
 
 .barra-etiqueta {
-  width: 82px;
+  width: 92px;
   flex-shrink: 0;
   font-size: 12.5px;
   font-weight: 600;
@@ -281,8 +366,8 @@ body {
 .barra-pista {
   flex: 1;
   height: 14px;
-  background: var(--plano-pagina);
-  border-radius: 7px;
+  background: var(--gridline-tabla);
+  border-radius: 4px;
   overflow: hidden;
   transition: background var(--transicion);
 }
@@ -291,7 +376,7 @@ body {
 
 .barra-valor {
   height: 100%;
-  border-radius: 7px;
+  border-radius: 4px;
   transition: width 320ms ease;
 }
 
@@ -324,11 +409,71 @@ body {
 .barra-filtros {
   display: flex;
   align-items: flex-end;
-  gap: 20px;
-  padding: 14px 28px;
+  gap: 16px;
+  margin: 0 32px;
+  padding: 14px 18px;
   background: var(--superficie);
-  border-bottom: 1px solid var(--gridline);
+  border: 1px solid var(--gridline);
+  border-radius: var(--radio);
   flex-wrap: wrap;
+}
+
+/* Chips de filtros activos: resumen legible de que esta filtrado en este
+   momento, con boton para sacar cada uno o "Limpiar todo" (modelo UX
+   provisto por el usuario, 2026-09-19). */
+.filtros-activos {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 0 32px;
+  min-height: 20px;
+}
+
+.filtros-activos-etiqueta {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--tinta-secundaria);
+}
+
+.chip-filtro {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 6px 4px 11px;
+  border-radius: 999px;
+  background: var(--acento-fondo);
+  border: 1px solid var(--acento-borde);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--acento-hover);
+}
+
+.chip-filtro button {
+  width: 17px;
+  height: 17px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: var(--acento-borde);
+  color: var(--acento-hover);
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.chip-filtro button:hover { background: #b0c9d9; }
+
+.btn-limpiar-filtros {
+  padding: 4px 10px;
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--acento);
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 .filtro {
@@ -347,10 +492,13 @@ body {
 
 .filtro select,
 .filtro input[type="text"] {
-  padding: 7px 9px;
+  height: 40px;
+  padding: 0 10px;
   border: 1px solid var(--gridline);
-  border-radius: var(--radio);
-  font-size: 13px;
+  border-radius: var(--radio-chico);
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--tinta-primaria);
   min-width: 160px;
   transition: border-color var(--transicion), box-shadow var(--transicion);
 }
@@ -360,7 +508,7 @@ body {
 .multiselect-boton:focus {
   outline: none;
   border-color: var(--acento);
-  box-shadow: 0 0 0 3px rgba(42, 120, 214, 0.15);
+  box-shadow: 0 0 0 3px var(--acento-fondo);
 }
 
 .filtro-buscador input { min-width: 220px; }
@@ -369,12 +517,13 @@ body {
 
 .multiselect-boton {
   min-width: 180px;
+  height: 40px;
   text-align: left;
-  padding: 7px 30px 7px 9px;
+  padding: 0 30px 0 10px;
   border: 1px solid var(--gridline);
-  border-radius: var(--radio);
-  font-size: 13px;
-  background: var(--superficie) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath fill='%230e2240' d='M1 1l5 5 5-5'/%3E%3C/svg%3E") no-repeat right 10px center;
+  border-radius: var(--radio-chico);
+  font-size: 14px;
+  background: var(--superficie) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath fill='%2355554d' d='M1 1l5 5 5-5'/%3E%3C/svg%3E") no-repeat right 10px center;
   cursor: pointer;
   color: var(--tinta-primaria);
   white-space: nowrap;
@@ -383,7 +532,7 @@ body {
   transition: border-color var(--transicion);
 }
 
-.multiselect-boton:hover { border-color: var(--acento); }
+.multiselect-boton:hover { border-color: var(--tinta-muted); }
 
 .multiselect-panel {
   position: absolute;
@@ -394,7 +543,7 @@ body {
   max-width: 340px;
   background: var(--superficie);
   border: 1px solid var(--gridline);
-  border-radius: var(--radio);
+  border-radius: var(--radio-chico);
   box-shadow: var(--sombra-flotante);
   padding: 8px;
   animation: desplegar 140ms ease;
@@ -478,49 +627,91 @@ body {
 }
 
 .filtro-acciones button {
+  height: 40px;
   background: var(--superficie);
-  color: var(--acento);
-  border: 1px solid var(--acento);
-  padding: 9px 18px;
-  border-radius: var(--radio);
+  color: var(--tinta-primaria);
+  border: 1px solid var(--gridline);
+  padding: 0 15px;
+  border-radius: var(--radio-chico);
   cursor: pointer;
+  font-family: inherit;
   font-size: 13px;
-  font-weight: 600;
-  transition: background var(--transicion), transform 100ms ease;
+  font-weight: 500;
+  transition: border-color var(--transicion), transform 100ms ease;
 }
 
-.filtro-acciones button:hover { background: var(--estado-info-fondo); }
+.filtro-acciones button:hover { border-color: var(--tinta-muted); }
 .filtro-acciones button:active { transform: scale(0.97); }
 
 /* ---------- Tabla ---------- */
 
 main {
-  padding: 20px 28px 56px;
-  overflow-x: auto;
+  padding: 18px 32px 56px;
 }
+
+.tabla-card {
+  background: var(--superficie);
+  border: 1px solid var(--gridline);
+  border-radius: var(--radio);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.tabla-toolbar {
+  flex-shrink: 0;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--gridline-tabla);
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.tabla-toolbar-resumen {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.tabla-toolbar-cantidad {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.tabla-toolbar-orden {
+  font-size: 12px;
+  color: var(--tinta-secundaria);
+}
+
+.tabla-toolbar-acciones {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tabla-scroll { overflow-x: auto; }
 
 table {
   width: auto;
   table-layout: auto;
   border-collapse: collapse;
-  background: var(--superficie);
-  border-radius: var(--radio);
-  overflow: hidden;
-  box-shadow: 0 1px 3px rgba(11, 11, 11, 0.08);
 }
 
 thead th {
   position: sticky;
   top: 0;
-  background: #f0e6d2;
+  background: #faf9f5;
   color: var(--tinta-secundaria);
   text-align: left;
   padding: 11px 14px;
   font-weight: 600;
-  font-size: 11.5px;
+  font-size: 11px;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  border-bottom: 1px solid var(--gridline);
+  letter-spacing: 0.4px;
+  border-bottom: 1px solid var(--gridline-tabla);
   cursor: pointer;
   /* Los encabezados numericos (ej. "DIAS STOCK C/TRANSITO") pueden partirse
      en 2 lineas -- si no, un titulo largo obliga a toda la columna a ser
@@ -530,7 +721,7 @@ thead th {
   transition: color var(--transicion), background var(--transicion);
 }
 
-thead th:hover { color: var(--tinta-primaria); background: #eadcc0; }
+thead th:hover { color: var(--tinta-primaria); background: var(--gridline-tabla); }
 
 thead th.num {
   text-align: right;
@@ -539,14 +730,25 @@ thead th.num {
   line-height: 1.3;
 }
 
-thead th.orden-activo { color: var(--acento); }
+th.col-dot { width: 26px; padding-right: 0; }
+
+/* La columna que ordena la tabla en este momento queda resaltada de punta
+   a punta (encabezado + celdas), en vez de tintar toda la fila -- asi se
+   ve de un vistazo por que criterio esta ordenado, y las filas se leen por
+   su estado real (el punto de la 1ra columna), no por un color de fondo
+   que compite con el resto de la info. */
+thead th.orden-activo, tbody td.orden-activo {
+  background: #f1efe8;
+}
+
+thead th.orden-activo { color: var(--tinta-primaria); font-weight: 700; }
 
 thead th.orden-activo::after { content: " \25B2"; font-size: 10px; }
 thead th.orden-activo.orden-desc::after { content: " \25BC"; font-size: 10px; }
 
 tbody td {
-  padding: 9px 14px;
-  border-bottom: 1px solid var(--gridline);
+  padding: 12px 14px;
+  border-top: 1px solid var(--gridline-tabla);
   white-space: nowrap;
 }
 
@@ -562,72 +764,35 @@ tbody td.num {
   text-overflow: ellipsis;
 }
 
+tbody td.orden-activo { font-size: 15px; font-weight: 600; }
+
 tbody tr { transition: background var(--transicion); }
-tbody tr:hover { background: #f2f4f7; }
+tbody tr:hover { background: var(--plano-pagina); }
+tbody tr:hover td.orden-activo { background: #eae7de; }
 
-tbody tr:nth-child(even):not(.semaforo-rojo):not(.semaforo-amarillo):not(.semaforo-sobrestock) {
-  background: var(--plano-pagina);
-}
-
-tbody tr.semaforo-rojo { background: var(--estado-critico-fondo); }
-tbody tr.semaforo-rojo td:first-child { border-left: 3px solid var(--estado-critico); }
-tbody tr.semaforo-rojo:hover { background: #f7dcdc; }
-
-tbody tr.semaforo-amarillo { background: var(--estado-atencion-fondo); }
-tbody tr.semaforo-amarillo td:first-child { border-left: 3px solid var(--estado-atencion); }
-tbody tr.semaforo-amarillo:hover { background: #fbe7bd; }
-
-tbody tr.semaforo-verde td:first-child { border-left: 3px solid var(--estado-bien); }
-
-tbody tr.semaforo-sobrestock { background: var(--estado-info-fondo); }
-tbody tr.semaforo-sobrestock td:first-child { border-left: 3px solid var(--estado-info); }
-tbody tr.semaforo-sobrestock:hover { background: #dbe8f9; }
-
-tbody tr.semaforo-neutro td:first-child { border-left: 3px solid transparent; }
-
-/* ---------- Columna fija (deposito) al scrollear ----------
-   Escapada a #tabla-stock (la tabla principal): stock_general.html reusa
-   esta hoja de estilos con una tabla propia (#tabla-stock-general).
-   Solo se congela la 1ra columna: al pedido del usuario (2026-09-18) de que
-   cada columna se ajuste al ancho de su dato mas largo (sin fijar px), ya
-   no se puede precalcular en CSS el offset 'left' de una 2da columna
-   congelada -- su ancho ahora es variable, depende del contenido. */
-
-#tabla-stock thead th:nth-child(1), #tabla-stock tbody td:nth-child(1) {
-  position: sticky;
-  left: 0;
-}
-
-#tabla-stock thead th:nth-child(1) { z-index: 3; }
-#tabla-stock tbody td:nth-child(1) { z-index: 1; background: var(--superficie); }
-
-#tabla-stock tbody tr:nth-child(even):not(.semaforo-rojo):not(.semaforo-amarillo):not(.semaforo-sobrestock) td:nth-child(1) {
-  background: var(--plano-pagina);
-}
-#tabla-stock tbody tr:hover td:nth-child(1) { background: #f2f4f7; }
-
-#tabla-stock tbody tr.semaforo-rojo td:nth-child(1) { background: var(--estado-critico-fondo); }
-#tabla-stock tbody tr.semaforo-rojo:hover td:nth-child(1) { background: #f7dcdc; }
-
-#tabla-stock tbody tr.semaforo-amarillo td:nth-child(1) { background: var(--estado-atencion-fondo); }
-#tabla-stock tbody tr.semaforo-amarillo:hover td:nth-child(1) { background: #fbe7bd; }
-
-#tabla-stock tbody tr.semaforo-sobrestock td:nth-child(1) { background: var(--estado-info-fondo); }
-#tabla-stock tbody tr.semaforo-sobrestock:hover td:nth-child(1) { background: #dbe8f9; }
-
+/* Punto de estado en la 1ra columna (angosta): reemplaza al tinte de fila
+   completa + franja de color que se usaba antes -- el color de riesgo se
+   lee ahi y, para dias_stock/dias_stock_c_transito, tambien como texto en
+   negrita del mismo color (ver mas abajo), nunca como fondo de la fila. */
 .punto-estado {
-  display: inline-block;
-  width: 7px;
-  height: 7px;
+  display: block;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
-  margin-right: 6px;
-  vertical-align: middle;
+  background: var(--tinta-muted);
 }
 
 .punto-estado.pe-rojo { background: var(--estado-critico); }
 .punto-estado.pe-amarillo { background: var(--estado-atencion); }
 .punto-estado.pe-verde { background: var(--estado-bien); }
-.punto-estado.pe-sobrestock { background: var(--estado-info); }
+.punto-estado.pe-sobrestock { background: var(--estado-sobrestock); }
+
+/* Texto en negrita del color de riesgo, solo en las columnas de dias de
+   stock (son las que ese riesgo describe) -- independiente de cual
+   columna este ordenando la tabla en este momento. */
+tbody tr.semaforo-rojo td.col-dias { color: var(--estado-critico-texto); font-weight: 600; }
+tbody tr.semaforo-amarillo td.col-dias { color: var(--estado-atencion); font-weight: 600; }
+tbody tr.semaforo-sobrestock td.col-dias { color: var(--estado-sobrestock-texto); font-weight: 600; }
 
 .icono-transito {
   display: inline-block;
@@ -635,7 +800,7 @@ tbody tr.semaforo-neutro td:first-child { border-left: 3px solid transparent; }
   height: 14px;
   vertical-align: -2px;
   margin-left: 4px;
-  color: var(--estado-info);
+  color: var(--acento);
   cursor: help;
 }
 
@@ -722,7 +887,7 @@ tbody tr.semaforo-neutro td:first-child { border-left: 3px solid transparent; }
 
 @media print {
   .barra-superior, .avisos, .kpis, .graficos, .barra-filtros,
-  .totales, .toast, .grafico-tooltip {
+  .filtros-activos, .tabla-toolbar, .totales, .toast, .grafico-tooltip {
     display: none !important;
   }
 
@@ -730,19 +895,16 @@ tbody tr.semaforo-neutro td:first-child { border-left: 3px solid transparent; }
 
   main { padding: 0; overflow: visible; }
 
+  .tabla-card { border: none; }
+
   table {
     width: 100%;
-    box-shadow: none;
   }
 
-  #tabla-stock thead th:nth-child(1),
-  #tabla-stock tbody td:nth-child(1) {
-    position: static;
-  }
+  thead th { position: static; background: #faf9f5 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 
-  thead th { position: static; background: #f0e6d2 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-
-  tbody tr.semaforo-rojo, tbody tr.semaforo-amarillo, tbody tr.semaforo-sobrestock {
+  tbody td.orden-activo,
+  tbody tr.semaforo-rojo td.col-dias, tbody tr.semaforo-amarillo td.col-dias, tbody tr.semaforo-sobrestock td.col-dias {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
