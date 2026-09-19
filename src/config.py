@@ -23,6 +23,7 @@ class Rutas:
     ventas_carpeta: Path
     transito_carpeta: Path
     ingresos_archivo: str
+    novedades_archivo: str
     supply_pedidos_carpeta: Path
     maestro_productos: Path
     salida: Path
@@ -102,6 +103,7 @@ def cargar_config(ruta: Path = CONFIG_JSON) -> Config:
         ventas_carpeta=_resolver_ruta(r["ventas_carpeta"]),
         transito_carpeta=_resolver_ruta(r["transito_carpeta"]),
         ingresos_archivo=r["ingresos_archivo"],
+        novedades_archivo=r["novedades_archivo"],
         supply_pedidos_carpeta=_resolver_ruta(r["supply_pedidos_carpeta"]),
         maestro_productos=_resolver_ruta(r["maestro_productos"]),
         salida=_resolver_ruta(r["salida"]),

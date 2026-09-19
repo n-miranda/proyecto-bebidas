@@ -30,9 +30,17 @@
     for (const art of articulos) {
       if (art.deposito === "SIN DEPOSITO") continue;
       if (!porCodigo.has(art.codigo)) {
-        porCodigo.set(art.codigo, { codigo: art.codigo, descripcion: art.descripcion, stockPorDeposito: {} });
+        porCodigo.set(art.codigo, {
+          codigo: art.codigo, descripcion: art.descripcion, novedad: art.novedad || "",
+          transitoTotal: 0, stockPorDeposito: {},
+        });
       }
-      porCodigo.get(art.codigo).stockPorDeposito[art.deposito] = art.stock_bultos;
+      const fila = porCodigo.get(art.codigo);
+      fila.stockPorDeposito[art.deposito] = art.stock_bultos;
+      // Transito ya viene por (codigo, deposito) -- ver consolidador.py --
+      // aca se suma entre depositos porque esta vista es un resumen por
+      // codigo, no tiene una columna por deposito para el transito.
+      fila.transitoTotal += art.transito_bultos || 0;
     }
     return [...porCodigo.values()].sort((a, b) => Number(a.codigo) - Number(b.codigo));
   }
@@ -60,6 +68,8 @@
         <th>Código</th>
         <th>Descripción</th>
         ${depositos.map((d) => `<th class="num">${escaparHtml(d)} (bultos)</th>`).join("")}
+        <th class="num">Tránsito (bultos)</th>
+        <th>Novedad</th>
       </tr>`;
   }
 
@@ -67,13 +77,15 @@
     const filas = filasFiltradas();
 
     if (filas.length === 0) {
-      cuerpoTabla.innerHTML = `<tr><td colspan="${2 + depositos.length}">No hay artículos que coincidan con la búsqueda.</td></tr>`;
+      cuerpoTabla.innerHTML = `<tr><td colspan="${4 + depositos.length}">No hay artículos que coincidan con la búsqueda.</td></tr>`;
     } else {
       cuerpoTabla.innerHTML = filas.map((fila) => `
       <tr>
         <td>${fila.codigo}</td>
         <td title="${escaparHtml(fila.descripcion)}">${fila.descripcion}</td>
         ${depositos.map((d) => `<td class="num">${fmtDosDecimales.format(fila.stockPorDeposito[d] ?? 0)}</td>`).join("")}
+        <td class="num">${fmtDosDecimales.format(fila.transitoTotal)}</td>
+        <td>${escaparHtml(fila.novedad)}</td>
       </tr>`).join("");
     }
 
@@ -92,11 +104,13 @@
   // directo) -- respeta la busqueda aplicada en este momento.
   function exportarExcel() {
     const filas = filasFiltradas();
-    const encabezado = ["Código", "Descripción", ...depositos.map((d) => `${d} (bultos)`)].join(";");
+    const encabezado = ["Código", "Descripción", ...depositos.map((d) => `${d} (bultos)`), "Tránsito (bultos)", "Novedad"].join(";");
     const lineas = filas.map((fila) => [
       csvEscapar(fila.codigo),
       csvEscapar(fila.descripcion),
       ...depositos.map((d) => fmtDosDecimales.format(fila.stockPorDeposito[d] ?? 0)),
+      fmtDosDecimales.format(fila.transitoTotal),
+      csvEscapar(fila.novedad),
     ].join(";"));
     const csv = "﻿" + [encabezado, ...lineas].join("\r\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });

@@ -7,6 +7,7 @@
     "ventas_carpeta": "VENTAS",
     "transito_carpeta": "TRANSITO",
     "ingresos_archivo": "INGRESOS.xlsx",
+    "novedades_archivo": "Novedades.xlsx",
     "supply_pedidos_carpeta": "D:\\01-Usuario\\Desktop\\Supply\\Posadas\\2. Pedidos Posadas",
     "maestro_productos": "C:\\integracion_stock\\auxiliares\\productos.xlsx",
     "salida": "salida",

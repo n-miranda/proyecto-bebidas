@@ -25,6 +25,8 @@ from src.fuentes.excel_maestro import (
     RUBRO_SIN_CLASIFICAR,
     ExcelMaestroProductos,
 )
+from src.fuentes.excel_novedades import ExcelNovedades
+from src.fuentes.excel_pedidos_deposito import TransitoPedidosDeposito
 from src.fuentes.excel_stock import ExcelStock
 from src.fuentes.excel_transito import TransitoSupplyIngresos
 from src.fuentes.excel_ventas import ExcelVentas
@@ -36,7 +38,7 @@ COLUMNAS_CANONICAS = [
     "stock_unidades", "stock_bultos", "venta_unidades_7d",
     "venta_promedio_bulto", "dias_stock",
     "transito_bultos", "dias_stock_c_transito", "dias_venta_usados",
-    "clase_riesgo", "sin_clasificar",
+    "clase_riesgo", "sin_clasificar", "novedad",
 ]
 
 
@@ -90,6 +92,9 @@ def consolidar(config: Config, fecha_referencia: date | None = None) -> Resultad
         transito_df = pd.DataFrame(columns=["codigo", "transito_unidades"])
     inconsistencias_transito = fuente_transito.inconsistencias()
 
+    novedades_df = ExcelNovedades(config.rutas.transito_carpeta / config.rutas.novedades_archivo).leer()
+    pedidos_deposito_df = TransitoPedidosDeposito(config.rutas.transito_carpeta).leer()
+
     ventas_ventana = ventas_df[ventas_df["fecha"].isin(dias_venta)] if not ventas_df.empty else ventas_df
     ventas_agg = (
         ventas_ventana.groupby("codigo", as_index=False)["unidades_vendidas"]
@@ -125,6 +130,11 @@ def consolidar(config: Config, fecha_referencia: date | None = None) -> Resultad
     df = stock_df.merge(maestro_df, on="codigo", how="left")
     df = df.merge(ventas_agg, on="codigo", how="left")
     df = df.merge(transito_agg, on="codigo", how="left")
+    df = df.merge(novedades_df, on="codigo", how="left")
+    # A diferencia de transito_agg (TransitoSupplyIngresos, catalogo de
+    # Total Refrigerados, por codigo nomas), esta fuente SI es de bebidas y
+    # SI viene discriminada por deposito -- se cruza por (codigo, deposito).
+    df = df.merge(pedidos_deposito_df, on=["codigo", "deposito"], how="left")
 
     codigos_en_mas_de_un_deposito = (
         df.groupby("codigo")["deposito"].nunique().gt(1).sum()
@@ -132,9 +142,9 @@ def consolidar(config: Config, fecha_referencia: date | None = None) -> Resultad
     if codigos_en_mas_de_un_deposito:
         avisos.append(
             f"{codigos_en_mas_de_un_deposito} articulos tienen stock en mas de un deposito: "
-            "aparecen en una fila por deposito, cada una con su propio stock y venta promedio "
-            "bulto (columna K de stock_bebidas.xlsx). 'Venta 7d' y 'transito' si usan el TOTAL "
-            "del articulo, no discriminan por deposito (VENTAS.xlsx y el transito no lo traen)."
+            "aparecen en una fila por deposito, cada una con su propio stock, venta promedio "
+            "bulto y transito de pedidos (TRANSITO\\<DEPOSITO> - Pedidos.xlsx). 'Venta 7d' es la "
+            "excepcion: usa el TOTAL del articulo, no discrimina por deposito (VENTAS.xlsx no lo trae)."
         )
 
     if config.proveedores_excluidos:
@@ -151,7 +161,18 @@ def consolidar(config: Config, fecha_referencia: date | None = None) -> Resultad
     df["stock_unidades"] = df["stock_unidades"].fillna(0.0)
     df["venta_unidades_7d"] = df["venta_unidades_7d"].fillna(0.0)
     df["transito_unidades"] = df["transito_unidades"].fillna(0.0)
+    df["transito_bultos_pedidos"] = df["transito_bultos_pedidos"].fillna(0.0)
     df["descripcion"] = df["descripcion"].fillna("(sin descripcion)")
+    # None, no NaN: json.dumps(..., allow_nan=False) en snapshot.py explota
+    # con NaN. Sin novedad debe ser "nada" (null en el JSON), no un string.
+    # OJO: Series.apply() no sirve aca -- pandas reconvierte el None que
+    # devuelve la lambda de vuelta a NaN al armar la Series resultado (lo
+    # mismo que ya se documenta mas abajo para dias_stock). Hay que construir
+    # la Series directo desde una lista de Python con dtype=object.
+    df["novedad"] = pd.Series(
+        [v if pd.notna(v) else None for v in df["novedad"]],
+        index=df.index, dtype=object,
+    )
     df["sin_clasificar"] = False
     tiene_venta_promedio = df["venta_promedio_bulto"].notna()
     df["venta_promedio_bulto"] = df["venta_promedio_bulto"].fillna(0.0)
@@ -182,7 +203,7 @@ def consolidar(config: Config, fecha_referencia: date | None = None) -> Resultad
     )
     df["transito_bultos"] = df.apply(
         lambda r: convertir_a_bultos(r["transito_unidades"], r["unidades_por_bulto"]), axis=1
-    )
+    ) + df["transito_bultos_pedidos"]
     # dtype=object explicito: si se deja que pandas infiera el tipo, los
     # None que devuelve calcular_dias_stock (sin venta) se convierten
     # silenciosamente en NaN, que no es JSON valido (rompe el snapshot).
