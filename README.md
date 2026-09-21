@@ -1,48 +1,152 @@
 # Unificador de Stock — Bebidas
 
-> Este proyecto nace como copia de `D:\UNIFICADOR_STOCK` (mismo sistema,
-> pensado para terminar unificando el stock de bebidas). **Por pedido del
-> usuario (2026-09-17), por el momento sigue trabajando contra las mismas
-> bases** (mismos archivos de STOCK, VENTAS, TRANSITO y el mismo maestro de
-> productos que UNIFICADOR_STOCK) — ver la advertencia al principio de
-> [`CLAUDE.md`](CLAUDE.md).
+Aplicación web **local y de solo lectura** que unifica en una sola vista el
+stock de bebidas de varios depósitos y muestra, por artículo, cuántos días de
+venta cubre ese stock. Sirve para detectar de un vistazo qué está por quebrar y
+qué está sobrestockeado, sin cruzar planillas a mano.
 
-## Qué hace hoy
+- **Local:** Flask + HTML/CSS/JS vanilla (sin build, sin Node).
+- **Publicado:** sitio estático en Vercel con una foto fija de los datos.
+- **Reglas del proyecto y especificación completa:** [`CLAUDE.md`](CLAUDE.md).
 
-Es una copia funcional en paralelo de UNIFICADOR_STOCK: mismo motor de
-cálculo, misma web, y corriendo contra los mismos datos reales (se copiaron
-`STOCK\stock.xlsx`, `STOCK\rubros.xlsx`, `VENTAS\VENTAS.xlsx` y
-`TRANSITO\INGRESOS.xlsx`). `config\config.json` y `config\mapeo_columnas.json`
-son idénticos a los de UNIFICADOR_STOCK y siguen siendo válidos tal cual.
-
-**Importante:** al ser una copia independiente, los dos proyectos ya no se
-actualizan entre sí. Si se corrige algo en `D:\UNIFICADOR_STOCK` (config,
-código, o se refrescan los Excel de origen), hay que replicarlo acá a mano
-mientras ambos compartan las mismas bases.
+> Este proyecto nació como copia de `D:\UNIFICADOR_STOCK` (Total
+> Refrigerados). La migración a datos propios de bebidas está **a medias**:
+> ver [Estado de los datos](#estado-de-los-datos).
 
 ## Uso
 
 ```
+pip install -r requirements.txt
 python -m src.main
 ```
 
 Procesa las fuentes, genera `salida\snapshot.json` y levanta
-`http://127.0.0.1:5000/`.
+`http://127.0.0.1:5000/`. El botón **Actualizar datos** de la barra superior
+vuelve a leer los Excel sin reiniciar el servidor.
 
-## Cuándo pasar a datos propios de bebidas
+> **Si cambiás una plantilla `.html`, reiniciá el servidor.** Flask guarda las
+> plantillas en memoria al arrancar; en cambio `app.js` y `estilos.css` se leen
+> del disco en cada pedido. Un servidor viejo con un JS nuevo deja la tabla en
+> "Cargando…" porque el JS busca elementos que la plantilla vieja no tiene.
+> Después de tocar CSS/JS alcanza con recargar con Ctrl+F5.
 
-Cuando se defina la fuente real de stock/ventas/tránsito de bebidas:
+## Estado de los datos
 
-1. Ejecutar el **Paso 0 — Reconocimiento** (`CLAUDE.md`, sección 12) contra
-   esos archivos nuevos — no asumir que comparten formato con Total
-   Refrigerados.
-2. Reescribir `config\mapeo_columnas.json` con el mapeo confirmado.
-3. Actualizar `config\config.json` → rutas, `proveedores_excluidos` y
-   `semaforo_relativo_stock_seguridad` para bebidas.
-4. Definir si aplican o no los parsers de `src\fuentes\pedidos_posadas\`
-   (hoy son de proveedores de Posadas: Georgalos, La Serenisima, Piamontesa,
-   Timbo, Trigos Argentinos) o si hace falta escribir parsers nuevos.
-5. Responder las preguntas abiertas de `CLAUDE.md` (sección 13).
+| Fuente | Origen | Estado |
+|---|---|---|
+| **Stock** | `stock_bebidas.xlsx` (pestañas OB, SV, PR, TC: una por depósito) | **Real de bebidas.** Se toma el bloque "DISPONIBLE" (columnas A-D); el bloque "FÍSICO" no se usa |
+| **Venta promedio por bulto** | Columna K ("Venta Prom Pedido") de esas mismas pestañas, cruzada por la columna L ("Cod") | **Real de bebidas.** Es la base del cálculo de días de stock |
+| **Tránsito** | `TRANSITO\<DEPÓSITO> - Pedidos.xlsx` + `INGRESOS.xlsx` + parsers de Posadas | Por depósito; los parsers de Posadas (Georgalos, La Serenísima, Piamontesa, Timbo, Trigos Argentinos) son de Total Refrigerados |
+| **Novedades** | `TRANSITO\Novedades.xlsx` | Nota libre por artículo (hoy 6) |
+| **Ventas** | `VENTAS\VENTAS.xlsx` | Heredado de Total Refrigerados; no comparte códigos con bebidas |
+| **Maestro de productos** | proveedor / rubro / unidades por bulto | Heredado de Total Refrigerados; no comparte códigos con bebidas |
+
+Las rutas salen de `config\config.json` (`rutas.*`). Consecuencias esperables,
+avisadas en la propia web (chip **"N avisos"**):
+
+- Todos los artículos figuran **SIN CLASIFICAR** (sin proveedor ni rubro) y con
+  1 unidad por bulto, porque el maestro no tiene los códigos de bebidas.
+- **"Venta 7d" sale en 0** casi siempre (no hay match de códigos con
+  `VENTAS.xlsx`). **No afecta los días de stock**, que usan la venta promedio
+  del propio archivo de stock.
+- El universo de artículos es **únicamente** el de `stock_bebidas.xlsx`: no se
+  agregan artículos huérfanos de ventas o tránsito.
+- El filtro **Clúster** está armado pero sin datos (esperando una fuente real).
+- El encabezado dice "833 artículos, 862 sin clasificar": las 862 son
+  *inconsistencias* (359 códigos distintos, algunos con varios motivos, 29 ni
+  están en la tabla), no artículos.
+
+## La web
+
+### Vista principal (`/`)
+
+- **Barra superior:** fecha de actualización, ventana de días de venta usada,
+  chip de avisos (panel flotante que se cierra con clic afuera o Escape) y
+  botón "Actualizar datos".
+- **Filtros** (combinables, en vivo): Depósito, Clúster, búsqueda por
+  código/descripción, y selector de columnas visibles. Los filtros activos se
+  ven como chips con "Limpiar todo".
+- **Tarjetas:** artículos filtrados, riesgo de quiebre, normal y sobrestock.
+  Cada una es clickeable y filtra la tabla por estado. Los textos de detalle
+  ("Menos de 3 días", etc.) salen de la configuración. Las categorías suman el
+  total: **rojo + atención + normal + sobrestock + sin venta** (la de
+  "atención" no tiene tarjeta; su cantidad se ve en el detalle de "Riesgo de
+  quiebre" y "sin venta" en el de "Artículos filtrados").
+- **Tabla** de una sola hoja (sin paginar), con encabezado fijo y scroll
+  propio. Columnas: estado, código, descripción, depósito, stock (bultos),
+  venta promedio (bultos), días de stock, tránsito (bultos) y días de stock con
+  tránsito. La novedad, si existe, se ve bajo la descripción.
+- **Pie:** cantidad filtrada y proveedor con más artículos en riesgo.
+
+### Arranque y orden
+
+- **La web arranca sin orden ni filtros activos.** La tabla muestra el orden de
+  origen (por depósito y código).
+- Cada clic en un encabezado recorre **ascendente → descendente → sin orden**
+  (de A a Z / de Z a A en las columnas de texto). Al pasar a otra columna, la
+  anterior se limpia. El tooltip del encabezado indica qué hace el próximo clic.
+- Los artículos sin dato de días de stock (`S/V`, `—`) quedan siempre al final.
+
+### Semáforo (sobre "días de stock")
+
+| Estado | Regla | Significado |
+|---|---|---|
+| Rojo | menos de 3 días | Riesgo de quiebre |
+| Amarillo | 3 a 7 días | Atención |
+| Verde | 7 a 20 días | Normal |
+| Sobrestock | más de 20 días | Exceso |
+| Neutro | sin venta | `S/V` (hay stock) o `—` (sin stock ni venta) |
+
+Umbrales en `config\config.json` → `semaforo_dias_stock`. Cuando un artículo
+tiene stock de seguridad conocido, el corte es relativo a ese valor
+(`semaforo_relativo_stock_seguridad`). El estado nunca depende solo del color:
+el punto lleva texto para lectores de pantalla y el valor va en negrita.
+
+**Quiebre cubierto:** una fila en rojo con tránsito se marca con `▶` en la
+columna Tránsito (el quiebre está cubierto por mercadería en camino). Sin marca
+es un quiebre real.
+
+### Stock General (`/stock-general`)
+
+Una fila por código y **una columna por depósito**, más tránsito total y
+novedad. Buscador, encabezados ordenables con el mismo ciclo de tres estados, y
+**Exportar a Excel** que respeta el orden y la búsqueda que se ven en pantalla.
+
+### Exportar
+
+- **Excel:** genera un CSV con `;` y BOM UTF-8, que Excel en configuración
+  regional argentina abre directo. Exporta lo filtrado y ordenado en pantalla.
+- **PDF:** usa la impresión del navegador. Sale en **A4 horizontal** (se puede
+  cambiar en el diálogo), con encabezado que incluye el **logo de Total**, la
+  fecha del corte y los filtros aplicados. En papel las descripciones pasan a
+  otra línea y las cifras no se recortan; el encabezado se repite en cada
+  página y las filas no se parten.
+
+### Formato
+
+Decimales con coma y miles con punto (`1.234,56`), fechas `DD/MM/AAAA`. Días de
+stock con 1 decimal, bultos con 2. Las animaciones (conteo de tarjetas, entrada
+de filas) se desactivan con `prefers-reduced-motion`.
+
+## Identidad visual
+
+Rediseño **"Tablero de stock"**: fondo off-white `#f5f4f0`, barra superior casi
+negra `#1b1b18`, azul `#2e5e7e` como único color de acción; rojo, verde y ámbar
+reservados al semáforo. Tipografías IBM Plex Sans y Space Grotesk (Google
+Fonts, con fallback a las del sistema). Ícono de marca "TR" en la barra.
+
+El **logo de Total** aparece únicamente en el encabezado del PDF exportado, no
+en la interfaz. La paleta Quilmes usada el 2026-09-18 ya no está vigente
+(queda en el historial de git, commit `f17d333`).
+
+## Configuración
+
+Todo número de negocio y toda ruta salen de `config\config.json`: rutas de
+origen, ventana de días de venta, `incluir_dia_actual`, umbrales del semáforo,
+días de vencimiento de pedidos pendientes y `proveedores_excluidos` (BIGAR SA y
+Molinos Río de la Plata, heredados de Total Refrigerados). Los feriados están
+en `config\feriados.json` (no hardcodeados en el código; falla con un error
+claro si falta el año).
 
 ## Tests
 
@@ -50,29 +154,121 @@ Cuando se defina la fuente real de stock/ventas/tránsito de bebidas:
 python -m unittest discover -s src/tests -t . -v
 ```
 
+Cubren el calendario (días de venta y feriados), la conversión a bultos y los
+casos borde de días de stock, y el tránsito.
+
 ## Sitio publicado (Vercel) — solo lectura
 
-Hay una versión de esta web publicada en Vercel para poder consultarla sin
-tener la app local corriendo. **No procesa Excel en la nube** (Vercel no
-tiene acceso al disco de esta PC): muestra una foto fija de
+Versión de esta web publicada en Vercel para consultarla sin tener la app local
+corriendo: <https://proyecto-bebidas-rose.vercel.app>. **No procesa Excel en la
+nube** (Vercel no tiene acceso al disco de esta PC): muestra una foto fija de
 `data\snapshot.json`, publicada a mano.
 
-Qué es cada cosa:
-- `public\` — copia estática de `src\web\templates`/`src\web\static`, sin
-  Jinja y sin el botón "Actualizar datos" (no tiene sentido en la nube).
-- `api\stock.py`, `api\meta.py` — funciones serverless de Vercel (Python,
-  sin Flask) que sirven `data\snapshot.json` con la misma forma que
-  `GET /api/stock` y `GET /api/meta` de la app local.
-- `data\snapshot.json` — la foto fija publicada. Es una copia manual de
+- `public\` — copia estática de `src\web\templates` / `src\web\static`. **No es
+  idéntica:** no tiene el botón "Actualizar datos", muestra una etiqueta
+  "Solo lectura", usa rutas `/static/…` en vez de Jinja y su Stock General es
+  `stock-general.html`.
+- `api\stock.py`, `api\meta.py` — funciones serverless de Vercel (Python, sin
+  Flask; `vercel.json` fija `"framework": null` a propósito) con la misma forma
+  que `GET /api/stock` y `GET /api/meta` de la app local. `api\meta.py` también
+  devuelve los umbrales del semáforo leídos de `config\config.json`.
+- `data\snapshot.json` — la foto fija publicada; copia manual de
   `salida\snapshot.json`, no se regenera sola.
-- `STOCK\`, `VENTAS\`, `TRANSITO\`, `salida\`, `logs\` **no se suben** al
-  repo (`.gitignore`) — son datos de origen o generados en cada corrida
-  local, no hace falta que estén en GitHub/Vercel.
+- `.vercelignore` excluye `src\`, `STOCK\`, `VENTAS\`, `TRANSITO\`, `logs\` y
+  `salida\`. Un archivo suelto en `src\` confundía al detector de funciones de
+  Vercel.
+- `STOCK\`, `VENTAS\`, `TRANSITO\`, `salida\` y `logs\` **no se suben** al repo
+  (`.gitignore`). **El repo es público:** nunca subir los Excel de origen.
 
-### Para publicar datos nuevos
+### Publicar datos nuevos
 
-1. Correr `python -m src.main` (o `python -m src.snapshot`) localmente para
-   regenerar `salida\snapshot.json` con los Excel del día.
+1. `python -m src.main` para regenerar `salida\snapshot.json` con los Excel del
+   día.
 2. Copiar ese archivo a `data\snapshot.json`.
 3. `git add data\snapshot.json && git commit -m "Actualizar snapshot publicado" && git push`
-   — Vercel redespliega solo al detectar el push (repo conectado a GitHub).
+   — Vercel redespliega solo al detectar el push.
+
+### Publicar cambios de diseño o de código
+
+Un cambio en `src\web\` **no alcanza**: hay que replicarlo en `public\`.
+
+1. Editar `src\web\*` y probarlo local con `python -m src.main`.
+2. Replicarlo en `public\*`. No copiar encima (se perderían las diferencias de
+   arriba): usar un **merge de 3 vías**, con la última versión publicada como
+   base:
+   `git merge-file public/X <(git show HEAD:src/web/X) src/web/X`
+   y resolver a mano los conflictos.
+3. Probar `public\` tal cual (con un servidor que sirva la carpeta y los
+   handlers de `api\`) antes de subir.
+4. `git add` **solo los archivos del cambio** y revisar `git diff --cached`
+   antes del push, para que no se cuele algo sin aprobar.
+5. `git push` y confirmar contra la URL de producción en vez de asumir que el
+   build salió bien.
+
+Los cambios grandes de estética se prueban **primero solo en local** y se suben
+cuando se aprueban; los arreglos de datos o bugs se suben directo.
+
+## Cuándo pasar a datos propios de bebidas
+
+Cuando estén las fuentes reales de ventas, tránsito y maestro de bebidas (o la
+API de Chess):
+
+1. Ejecutar el **Paso 0 — Reconocimiento** (`CLAUDE.md`, sección 12) contra esos
+   archivos: no asumir que comparten formato con Total Refrigerados.
+2. Reescribir `config\mapeo_columnas.json` con el mapeo confirmado.
+3. Actualizar `config\config.json` (rutas, `proveedores_excluidos`,
+   `semaforo_relativo_stock_seguridad`).
+4. Definir si aplican los parsers de `src\fuentes\pedidos_posadas\` o si hacen
+   falta parsers nuevos.
+5. Responder las preguntas abiertas de `CLAUDE.md` (sección 13).
+
+Las fuentes están detrás de las interfaces de `src\fuentes\base.py`: pasar de
+Excel a un servidor compartido (ruta de red UNC en `config.json`) o a la API de
+Chess implica escribir un adaptador nuevo que devuelva las mismas columnas. Hoy
+el consolidador instancia las clases Excel directamente
+(`src\consolidador.py`); para elegir la fuente desde `config.json` falta una
+pequeña fábrica. Las credenciales de una API van en variables de entorno o en
+un archivo local ignorado por git, nunca en el repo.
+
+## Pendientes conocidos
+
+- Agrupar visualmente los artículos que están en más de un depósito (hoy
+  aparecen en filas separadas, una por depósito).
+- Reemplazar el maestro de productos y las ventas por los de bebidas: hoy todo
+  figura "SIN CLASIFICAR".
+- Aclarar el texto del encabezado ("862 sin clasificar" cuenta inconsistencias,
+  no artículos).
+- `actualizar.bat` (previsto en `CLAUDE.md`) todavía no existe: se arranca con
+  `python -m src.main`.
+- Proyecto Vercel duplicado `proyecto-bebidas-ui7q`, sin resolver.
+- Habilitar `TEMPLATES_AUTO_RELOAD` en `src\web\app.py` para no tener que
+  reiniciar el servidor al cambiar plantillas.
+
+## Historial de cambios
+
+**2026-09-19**
+- Rediseño del panel principal: sin gráficos, avisos como chip colapsable,
+  tarjetas compactas, tabla de una sola hoja con encabezado fijo, novedad bajo
+  la descripción y `▶` de quiebre cubierto.
+- La web arranca sin orden ni filtros; orden en tres estados en ambas tablas.
+- PDF en A4 horizontal, con celdas que no se cortan y anchos propios de papel.
+- Botón "Stock general" con el mismo estilo que "Exportar a Excel".
+- Rediseño "Tablero de stock" (reemplaza la paleta Quilmes).
+- Novedades y tránsito por depósito en Stock General.
+
+**2026-09-18**
+- Stock real de bebidas desde `stock_bebidas.xlsx` (depósitos OB, SV, PR, TC) y
+  venta promedio por bulto como base de los días de stock.
+- El universo de artículos pasa a ser solo el del stock de bebidas.
+- Se quita el filtro/tarjeta de "Atención"; columnas que se ajustan al dato más
+  largo.
+- Exportar a Excel en Stock General; encabezado del PDF con filtros aplicados y
+  logo de Total.
+- Paleta Quilmes, columnas seleccionables, gráficos y transiciones (luego
+  reemplazados).
+
+**2026-09-17**
+- Versión inicial (copia de UNIFICADOR_STOCK) y publicación de solo lectura en
+  Vercel (`framework: null`, `.vercelignore`).
+- Se quita la columna "Venta 7d"; el filtro de Rubro pasa a Clúster (sin datos
+  por ahora).
