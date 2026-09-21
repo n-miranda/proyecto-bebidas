@@ -113,8 +113,9 @@ body {
 }
 
 .marca-icono {
-  width: 36px;
+  min-width: 36px;
   height: 36px;
+  padding: 0 10px;
   flex-shrink: 0;
   border-radius: var(--radio-chico);
   background: var(--marca-badge);
@@ -124,7 +125,8 @@ body {
   justify-content: center;
   font-family: var(--fuente-display);
   font-weight: 700;
-  font-size: 14px;
+  font-size: 13px;
+  letter-spacing: 0.06em;
 }
 
 .marca-texto {
