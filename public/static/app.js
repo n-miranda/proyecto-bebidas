@@ -43,7 +43,6 @@
   const encabezadoImpresionFechaEl = document.getElementById("encabezado-impresion-fecha");
   const encabezadoImpresionFiltrosEl = document.getElementById("encabezado-impresion-filtros");
   const filtrosActivosEl = document.getElementById("filtros-activos");
-  const tablaSubtituloEl = document.getElementById("tabla-subtitulo");
   const kpiTotalGeneralEl = document.getElementById("kpi-total-general");
   const kpiSinVentaEl = document.getElementById("kpi-sin-venta");
   const kpiAtencionEl = document.getElementById("kpi-atencion");
@@ -487,10 +486,6 @@
     renderKPIs(filasSinEstado);
     renderChipsFiltros();
 
-    const cantidadDepositos = new Set(filas.map((a) => a.deposito)).size;
-    tablaSubtituloEl.textContent =
-      `${fmtEntero.format(filas.length)} filas · ${fmtEntero.format(cantidadDepositos)} ${cantidadDepositos === 1 ? "depósito" : "depósitos"} · una sola hoja · ` +
-      textoOrdenActual();
     btnExportarCantidadEl.textContent = fmtEntero.format(filas.length);
     btnExportarPdfCantidadEl.textContent = fmtEntero.format(filas.length);
 
@@ -504,15 +499,6 @@
       : "";
     const leyenda = '<span class="leyenda"><span class="transito-cubierto">▶</span> con tránsito = quiebre cubierto</span>';
     totalesEl.innerHTML = `<span>${textoBase}</span>${resumenRiesgo}${leyenda}`;
-  }
-
-  function textoOrdenActual() {
-    if (!ordenCampo) return "sin ordenar";
-    const nombre = (ETIQUETA_COLUMNA[ordenCampo] || ordenCampo).toLowerCase();
-    const sentido = CAMPOS_TEXTO.has(ordenCampo)
-      ? (ordenAscendente ? "de A a Z" : "de Z a A")
-      : (ordenAscendente ? "de menor a mayor" : "de mayor a menor");
-    return `ordenadas por ${nombre}, ${sentido}`;
   }
 
   // Estado del orden en cada encabezado: clase para la flecha, aria-sort para
