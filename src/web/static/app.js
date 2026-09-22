@@ -204,7 +204,12 @@
 
   function valorCeldaTexto(art, campo) {
     switch (campo) {
+      // El stock es una cantidad de bultos concreta: se muestra entero, sin
+      // decimales (pedido del usuario, 2026-09-22). Venta promedio y
+      // transito siguen con 2 decimales -- son promedios/pendientes, no el
+      // stock en si.
       case "stock_bultos":
+        return fmtEntero.format(art[campo]);
       case "venta_promedio_bulto":
       case "transito_bultos":
         return fmtDosDecimales.format(art[campo]);
