@@ -22,7 +22,7 @@
   --acento-fondo: #e6eef3;
   --acento-borde: #c4d8e4;
 
-  --color-fondo-header: #1b1b18;
+  --color-fondo-header: #17324a;
   --color-fondo-header-texto: #f5f4f0;
   --marca-badge: #a32b1f;
 
@@ -113,20 +113,14 @@ body {
 }
 
 .marca-icono {
-  min-width: 36px;
-  height: 36px;
-  padding: 0 10px;
+  height: 32px;
+  width: auto;
   flex-shrink: 0;
-  border-radius: var(--radio-chico);
-  background: var(--marca-badge);
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--fuente-display);
-  font-weight: 700;
-  font-size: 13px;
-  letter-spacing: 0.06em;
+  display: block;
+  object-fit: contain;
+  border-radius: 3px;
+  background: #fff;
+  padding: 3px 6px;
 }
 
 .marca-texto {
@@ -257,8 +251,8 @@ body {
   flex-shrink: 0;
   display: flex;
   align-items: flex-end;
-  gap: 16px;
-  padding: 12px 16px;
+  gap: 12px;
+  padding: 8px 14px;
   background: var(--superficie);
   border: 1px solid var(--gridline);
   border-radius: var(--radio);
@@ -328,27 +322,27 @@ body {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
 }
 
 .filtro-buscador { flex: 2; }
 
 .filtro > label {
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
   color: var(--tinta-secundaria);
 }
 
 .filtro input[type="text"] {
   width: 100%;
-  height: 38px;
-  padding: 0 12px;
+  height: 30px;
+  padding: 0 10px;
   border: 1px solid var(--borde-control);
   border-radius: var(--radio-chico);
   font-family: inherit;
-  font-size: 14px;
+  font-size: 13px;
   color: var(--tinta-primaria);
   background: var(--superficie);
   transition: border-color var(--transicion), box-shadow var(--transicion);
@@ -370,14 +364,14 @@ body {
    con tamano fijo -- sin background-size el SVG (solo viewBox) se estira. */
 .multiselect-boton {
   width: 100%;
-  height: 38px;
+  height: 30px;
   text-align: left;
-  padding: 0 32px 0 12px;
+  padding: 0 28px 0 10px;
   border: 1px solid var(--borde-control);
   border-radius: var(--radio-chico);
   font-family: inherit;
-  font-size: 14px;
-  background: var(--superficie) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5l5-5' fill='none' stroke='%232e5e7e' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 12px center;
+  font-size: 13px;
+  background: var(--superficie) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5l5-5' fill='none' stroke='%232e5e7e' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 10px center;
   background-size: 12px 8px;
   cursor: pointer;
   color: var(--tinta-primaria);
