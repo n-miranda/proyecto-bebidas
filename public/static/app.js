@@ -328,7 +328,7 @@
         const transito = fila.transitoPorDeposito[d] || 0;
         // Sin transito en ese deposito no se agrega title: el tooltip del
         // navegador no aparece si el atributo no esta presente.
-        const titulo = transito > 0 ? ` title="Tránsito: ${fmtDosDecimales.format(transito)} bultos"` : "";
+        const titulo = transito > 0 ? ` title="Tránsito: ${fmtEntero.format(transito)} bultos"` : "";
         return `<td class="${clases}"${titulo}>${fmtEntero.format(fila.stockPorDeposito[d] ?? 0)}</td>`;
       };
       cuerpoTablaResumen.innerHTML = filas.map((fila) => `
@@ -336,7 +336,7 @@
         <td${act("codigo")}>${fila.codigo}</td>
         <td${act("descripcion")} title="${escaparHtml(fila.descripcion)}">${fila.descripcion}</td>
         ${depositosResumen.map((d) => celdaStock(fila, d)).join("")}
-        <td${act("transito", "num")}>${fmtDosDecimales.format(fila.transitoTotal)}</td>
+        <td${act("transito", "num")}>${fmtEntero.format(fila.transitoTotal)}</td>
         <td${act("novedad", "novedad-celda")}>${escaparHtml(fila.novedad)}</td>
       </tr>`).join("");
     }
@@ -359,7 +359,7 @@
       csvEscaparResumen(fila.codigo),
       csvEscaparResumen(fila.descripcion),
       ...depositosResumen.map((d) => fmtEntero.format(fila.stockPorDeposito[d] ?? 0)),
-      fmtDosDecimales.format(fila.transitoTotal),
+      fmtEntero.format(fila.transitoTotal),
       csvEscaparResumen(fila.novedad),
     ].join(";"));
     const csv = "﻿" + [encabezado, ...lineas].join("\r\n");
@@ -446,14 +446,14 @@
 
   function valorCeldaTexto(art, campo) {
     switch (campo) {
-      // El stock es una cantidad de bultos concreta: se muestra entero, sin
-      // decimales (pedido del usuario, 2026-09-22). Venta promedio y
-      // transito siguen con 2 decimales -- son promedios/pendientes, no el
-      // stock en si.
+      // Stock y transito son cantidades de bultos concretas: se muestran
+      // enteras, sin decimales (pedido del usuario, 2026-09-22 y 2026-09-23).
+      // Venta promedio sigue con 2 decimales -- es un promedio, no una
+      // cantidad de bultos real.
       case "stock_bultos":
+      case "transito_bultos":
         return fmtEntero.format(art[campo]);
       case "venta_promedio_bulto":
-      case "transito_bultos":
         return fmtDosDecimales.format(art[campo]);
       case "dias_stock":
         return formatearDiasStock(art.dias_stock, art.stock_bultos);

@@ -1,10 +1,8 @@
 (() => {
   "use strict";
 
-  const fmtDosDecimales = new Intl.NumberFormat("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  // El stock es una cantidad de bultos concreta: se muestra entero, sin
-  // decimales (pedido del usuario, 2026-09-22). El transito sigue con 2
-  // decimales -- es pendiente, no el stock en si.
+  // Stock y transito son cantidades de bultos concretas: se muestran
+  // enteras, sin decimales (pedido del usuario, 2026-09-22 y 2026-09-23).
   const fmtEntero = new Intl.NumberFormat("es-AR", { maximumFractionDigits: 0 });
 
   const encabezadoTabla = document.getElementById("encabezado-tabla");
@@ -179,7 +177,7 @@
         const transito = fila.transitoPorDeposito[d] || 0;
         // Sin transito en ese deposito no se agrega title: el tooltip del
         // navegador no aparece si el atributo no esta presente.
-        const titulo = transito > 0 ? ` title="Tránsito: ${fmtDosDecimales.format(transito)} bultos"` : "";
+        const titulo = transito > 0 ? ` title="Tránsito: ${fmtEntero.format(transito)} bultos"` : "";
         return `<td class="${clases}"${titulo}>${fmtEntero.format(fila.stockPorDeposito[d] ?? 0)}</td>`;
       };
       cuerpoTabla.innerHTML = filas.map((fila) => `
@@ -187,7 +185,7 @@
         <td${act("codigo")}>${fila.codigo}</td>
         <td${act("descripcion")} title="${escaparHtml(fila.descripcion)}">${fila.descripcion}</td>
         ${depositos.map((d) => celdaStock(fila, d)).join("")}
-        <td${act("transito", "num")}>${fmtDosDecimales.format(fila.transitoTotal)}</td>
+        <td${act("transito", "num")}>${fmtEntero.format(fila.transitoTotal)}</td>
         <td${act("novedad", "novedad-celda")}>${escaparHtml(fila.novedad)}</td>
       </tr>`).join("");
     }
@@ -215,7 +213,7 @@
       csvEscapar(fila.codigo),
       csvEscapar(fila.descripcion),
       ...depositos.map((d) => fmtEntero.format(fila.stockPorDeposito[d] ?? 0)),
-      fmtDosDecimales.format(fila.transitoTotal),
+      fmtEntero.format(fila.transitoTotal),
       csvEscapar(fila.novedad),
     ].join(";"));
     const csv = "﻿" + [encabezado, ...lineas].join("\r\n");
