@@ -16,6 +16,17 @@ logger = logging.getLogger(__name__)
 
 def crear_app() -> Flask:
     app = Flask(__name__)
+    # Sin esto, Flask compila cada plantilla (index.html, etc.) una sola vez
+    # y la reusa mientras el proceso siga vivo -- con debug=False (main.py)
+    # no la vuelve a leer del disco. Si el proceso no se reinicia despues de
+    # editar un .html, se sirve la plantilla vieja junto al app.js/estilos.css
+    # nuevos (esos si se leen del disco en cada request): la mezcla rompe
+    # porque el JS busca elementos que la plantilla vieja no tiene todavia
+    # (ver CLAUDE.md/incidente 2026-09-22, "no cargan los articulos" -- el
+    # boton/tabla nuevos no existian en el html cacheado y el primer
+    # getElementById que fallaba interrumpia el resto del script antes de
+    # llegar a cargarTodo()).
+    app.config["TEMPLATES_AUTO_RELOAD"] = True
     config = cargar_config()
 
     # Evita que el navegador sirva un app.js/estilos.css viejos de la cache
