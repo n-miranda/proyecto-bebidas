@@ -98,7 +98,177 @@ body {
   border: 0;
 }
 
-/* ---------- Barra superior ---------- */
+/* ---------- Encabezado (rediseño 2026-09-23, ver
+   rediseno-encabezado-unificador-stock_1.md) ---------- */
+/* Paleta de marca -- solo se usa dentro de .encabezado-tarjeta. El resto
+   de la app sigue con --acento/--tinta-* de la paleta "Tablero de stock":
+   el .md pide un cambio de piel unicamente en el encabezado, no una
+   retematizacion global. La pagina /stock-general (standalone, legacy)
+   sigue con .barra-superior tal cual, sin este rediseño. */
+.encabezado-tarjeta {
+  --color-brand: #2E4FE0;
+  --color-brand-dark: #1B3A9E;
+  --color-ink: #10254D;
+  --color-surface: #FFFFFF;
+  --color-text-muted: #5B6478;
+  --color-alert: #E0932C;
+
+  flex-shrink: 0;
+  margin: 9px 24px 0;
+  background: var(--color-brand);
+  border-radius: 19px;
+  padding: 21px 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 17px;
+  color: #fff;
+}
+
+.encabezado-fila-marca {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.encabezado-tarjeta .marca { gap: 8px; }
+
+.encabezado-tarjeta .marca-icono { height: 26px; }
+
+.encabezado-tarjeta .marca-texto {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.encabezado-tarjeta .marca-texto h1 {
+  font-family: "Poppins", var(--fuente-display), sans-serif;
+  font-size: 19px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.3px;
+}
+
+.encabezado-subtitulo {
+  font-family: "Inter", var(--fuente-cuerpo), sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  color: #C9D3F5;
+}
+
+.encabezado-chips {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+  font-family: "Inter", var(--fuente-cuerpo), sans-serif;
+}
+
+.chip-actualizado {
+  background: var(--color-brand-dark);
+  border-radius: 100px;
+  padding: 7px 14px;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Pulso muy sutil para transmitir que el dato esta vivo (el .md lo deja
+   opcional "si distrae, omitirlo"); respeta prefers-reduced-motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .chip-actualizado { animation: pulso-actualizado 2s ease-in-out infinite; }
+}
+
+@keyframes pulso-actualizado {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.85; }
+}
+
+.encabezado-ventana-ventas {
+  color: #C9D3F5;
+  font-size: 9px;
+  padding-left: 9px;
+  border-left: 1px solid rgba(255, 255, 255, 0.25);
+  cursor: help;
+}
+
+.encabezado-ventana-ventas:empty { display: none; }
+
+.encabezado-tarjeta .avisos summary {
+  background: var(--color-alert);
+  color: var(--color-ink);
+  padding: 7px 14px;
+  font-size: 10px;
+  font-weight: 600;
+  transition: background-color 160ms ease, transform 160ms ease;
+}
+
+.encabezado-tarjeta .avisos summary:hover { transform: translateY(-1px); }
+
+.encabezado-tarjeta #btn-actualizar {
+  background: var(--color-brand-dark);
+  color: #fff;
+  border: none;
+  padding: 7px 14px;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 600;
+  transition: background-color 160ms ease, transform 160ms ease;
+}
+
+.encabezado-tarjeta #btn-actualizar:hover { background: var(--color-ink); transform: translateY(-1px); }
+.encabezado-tarjeta #btn-actualizar:active { transform: translateY(0) scale(0.97); }
+
+.encabezado-separador {
+  height: 1px;
+  flex-shrink: 0;
+  background: #4A63D6;
+}
+
+/* Fila de acciones (exportar/"solo sin clasificar"): pedido del usuario,
+   2026-09-23 -- se invierte con el bloque de vista+filtros (que se mudo a
+   <main>, pegado arriba de los encabezados de columna); estas acciones
+   pasan a ocupar el lugar que dejo libre, adentro del encabezado azul. */
+.encabezado-fila-acciones { display: flex; }
+
+.encabezado-tarjeta .check-toggle { color: #C9D3F5; font-size: 10px; }
+.encabezado-tarjeta .check-toggle input { accent-color: var(--color-ink); }
+
+.encabezado-tarjeta .btn-primario,
+.encabezado-tarjeta .btn-secundario {
+  height: auto;
+  padding: 7px 14px;
+  font-size: 10px;
+  border-radius: 100px;
+  transition: background-color 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+.encabezado-tarjeta .btn-primario {
+  background: var(--color-brand-dark);
+  border-color: var(--color-brand-dark);
+}
+
+.encabezado-tarjeta .btn-primario:hover {
+  background: var(--color-ink);
+  border-color: var(--color-ink);
+  transform: translateY(-1px);
+}
+
+.encabezado-tarjeta .btn-secundario {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  color: #fff;
+}
+
+.encabezado-tarjeta .btn-secundario:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.8);
+  transform: translateY(-1px);
+}
+
+/* ---------- Barra superior (legacy, /stock-general standalone) ---------- */
 
 .barra-superior {
   height: 56px;
@@ -699,20 +869,6 @@ body {
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
-}
-
-/* En el dashboard principal esta barra ya no vive pegada arriba de la
-   tabla (dentro de .tabla-card): quedo suelta, arriba de los filtros
-   (pedido del usuario, 2026-09-22, "invertir" el orden de las dos
-   barras). Necesita su propio marco -- mismo look que .barra-filtros --
-   en vez del border-bottom que la separaba de la tabla cuando estaba
-   adentro. La pagina /stock-general (standalone, legacy) sigue usando
-   .tabla-toolbar tal cual, adentro de su .tabla-card. */
-.tabla-toolbar-independiente {
-  border-bottom: none;
-  background: var(--superficie);
-  border: 1px solid var(--gridline);
-  border-radius: var(--radio);
 }
 
 .tabla-toolbar-titulo {

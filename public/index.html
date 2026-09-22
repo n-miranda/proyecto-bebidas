@@ -8,53 +8,46 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap">
+  <!-- Poppins/Inter: solo para el encabezado rediseñado (ver
+       rediseno-encabezado-unificador-stock_1.md, 2026-09-23). El resto de
+       la pagina sigue con IBM Plex Sans/Space Grotesk. -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600&display=swap">
   <link rel="stylesheet" href="/static/estilos.css">
 </head>
 <body>
-  <header class="barra-superior">
-    <div class="marca">
-      <img class="marca-icono" src="/static/logo_total.jpg" alt="Total" aria-hidden="true">
-      <div class="marca-texto">
-        <h1>Unificador de Stock</h1>
-        <span class="marca-empresa">Bebidas</span>
+  <!-- Encabezado rediseñado (rediseno-encabezado-unificador-stock_1.md,
+       2026-09-23): tarjeta flotante azul de marca que junta la fila de
+       logo/titulo/chips con la fila de vista+filtros, antes separadas en
+       .barra-superior + .tabla-toolbar + .barra-filtros. El logo real
+       (logo_total.jpg) se mantiene tal cual -- el .md pedia reemplazarlo
+       por un chip de texto "total", pero el usuario pidio conservar el
+       logo ya subido. -->
+  <header class="encabezado-tarjeta">
+    <div class="encabezado-fila-marca">
+      <div class="marca">
+        <img class="marca-icono" src="/static/logo_total.jpg" alt="Total" aria-hidden="true">
+        <div class="marca-texto">
+          <h1>Unificador de Stock</h1>
+          <span class="encabezado-subtitulo">Bebidas</span>
+        </div>
+      </div>
+      <div class="encabezado-chips">
+        <span id="fecha-actualizacion" class="chip-actualizado">Cargando...</span>
+        <span id="ventana-ventas" class="encabezado-ventana-ventas"></span>
+        <!-- Chip colapsable con las advertencias de calidad de datos: lo arma
+             app.js::mostrarAvisos; sin avisos queda oculto. -->
+        <div id="avisos" hidden></div>
+        <span class="etiqueta-solo-lectura" title="Este sitio muestra una foto fija publicada manualmente, no procesa Excel en vivo">Solo lectura</span>
       </div>
     </div>
-    <div class="info-actualizacion">
-      <span id="fecha-actualizacion">Cargando...</span>
-      <span id="ventana-ventas" class="ventana-ventas"></span>
-      <!-- Chip colapsable con las advertencias de calidad de datos: lo arma
-           app.js::mostrarAvisos; sin avisos queda oculto. -->
-      <div id="avisos" hidden></div>
-      <span class="etiqueta-solo-lectura" title="Este sitio muestra una foto fija publicada manualmente, no procesa Excel en vivo">Solo lectura</span>
-    </div>
-  </header>
 
-  <!-- Solo se ve al exportar a PDF (window.print) -- app.js::exportarPDF la
-       completa justo antes de imprimir con la fecha y los filtros que
-       estaban aplicados en ese momento, para que quien reciba el PDF sepa
-       a que corte de datos corresponde. Ver estilos.css @media print. -->
-  <div id="encabezado-impresion" class="encabezado-impresion">
-    <div class="encabezado-impresion-marca">
-      <img id="logo-impresion" class="logo-impresion" src="/static/logo_total.jpg" alt="Total">
-      <span class="encabezado-impresion-titulo">Unificador de Stock — Bebidas</span>
-    </div>
-    <div class="encabezado-impresion-fecha" id="encabezado-impresion-fecha"></div>
-    <div class="encabezado-impresion-filtros" id="encabezado-impresion-filtros"></div>
-  </div>
+    <div class="encabezado-separador"></div>
 
-  <main class="contenedor">
-    <!-- Antes "Stock general" era un boton que abria /stock-general en una
-         pestana nueva. Ahora es una 2da vista de esta misma tabla, elegida
-         con este selector -- asi el usuario nunca pierde de vista los
-         filtros/KPIs, y el tab resaltado deja bien claro cual de las dos
-         esta mirando (ver app.js::cambiarVista). Va antes que los filtros
-         (pedido del usuario, 2026-09-22): primero se elige la vista, recien
-         despues los filtros que le corresponden a esa vista. -->
-    <div class="tabla-toolbar tabla-toolbar-independiente">
-      <div class="vista-tabs" role="tablist" aria-label="Vista de la tabla de stock">
-        <button type="button" class="vista-tab vista-tab-activa" data-vista="deposito" role="tab" aria-selected="true">Por depósito</button>
-        <button type="button" class="vista-tab" data-vista="resumen" role="tab" aria-selected="false" title="Una fila por código, una columna por depósito">Resumen por código</button>
-      </div>
+    <!-- Pedido del usuario, 2026-09-23: se invierte con el bloque de
+         vista+filtros (que ahora vive en <main>, pegado arriba de los
+         encabezados de columna). Este bloque de acciones pasa a ocupar el
+         lugar que dejo libre, adentro del encabezado azul. -->
+    <div class="encabezado-fila-acciones">
       <div class="tabla-toolbar-acciones" id="acciones-deposito">
         <label class="check-toggle">
           <input id="filtro-sin-clasificar" type="checkbox">
@@ -75,11 +68,22 @@
         </button>
       </div>
     </div>
+  </header>
 
-    <!-- Pedido del usuario, 2026-09-22: los KPI quedan arriba de los
-         filtros (antes al reves). Los chips de "filtros activos" siguen
-         pegados debajo de la barra de filtros, no de los KPI: son un
-         resumen de esa barra, no de las tarjetas. -->
+  <!-- Solo se ve al exportar a PDF (window.print) -- app.js::exportarPDF la
+       completa justo antes de imprimir con la fecha y los filtros que
+       estaban aplicados en ese momento, para que quien reciba el PDF sepa
+       a que corte de datos corresponde. Ver estilos.css @media print. -->
+  <div id="encabezado-impresion" class="encabezado-impresion">
+    <div class="encabezado-impresion-marca">
+      <img id="logo-impresion" class="logo-impresion" src="/static/logo_total.jpg" alt="Total">
+      <span class="encabezado-impresion-titulo">Unificador de Stock — Bebidas</span>
+    </div>
+    <div class="encabezado-impresion-fecha" id="encabezado-impresion-fecha"></div>
+    <div class="encabezado-impresion-filtros" id="encabezado-impresion-filtros"></div>
+  </div>
+
+  <main class="contenedor">
     <section class="kpis" id="kpis" aria-label="Resumen de stock (click para filtrar)">
       <div class="kpi kpi-total" data-estado="" role="button" tabindex="0" style="--i:0">
         <span class="kpi-etiqueta">Artículos filtrados</span>
@@ -103,7 +107,17 @@
       </div>
     </section>
 
+    <div class="filtros-activos" id="filtros-activos"></div>
+
+    <!-- Vista + filtros: pedido del usuario, 2026-09-23, deben quedar
+         pegados justo arriba de los encabezados de columna (antes vivian
+         adentro del encabezado azul; el bloque de acciones que estaba aca
+         se mudo para alla, ver <header>). -->
     <div class="barra-filtros">
+      <div class="vista-tabs" role="tablist" aria-label="Vista de la tabla de stock">
+        <button type="button" class="vista-tab vista-tab-activa" data-vista="deposito" role="tab" aria-selected="true">Por depósito</button>
+        <button type="button" class="vista-tab" data-vista="resumen" role="tab" aria-selected="false" title="Una fila por código, una columna por depósito">Resumen por código</button>
+      </div>
       <div class="filtro" id="filtro-deposito-wrap">
         <label>Depósito</label>
         <div class="multiselect" id="multiselect-deposito">
@@ -148,8 +162,6 @@
         </div>
       </div>
     </div>
-
-    <div class="filtros-activos" id="filtros-activos"></div>
 
     <div class="tabla-card">
       <div class="tabla-scroll" id="scroll-deposito">
