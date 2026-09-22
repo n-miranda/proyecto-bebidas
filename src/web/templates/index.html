@@ -79,6 +79,33 @@
       </div>
     </div>
 
+    <!-- Pedido del usuario, 2026-09-22: los KPI quedan arriba de los
+         filtros (antes al reves). Los chips de "filtros activos" siguen
+         pegados debajo de la barra de filtros, no de los KPI: son un
+         resumen de esa barra, no de las tarjetas. -->
+    <section class="kpis" id="kpis" aria-label="Resumen de stock (click para filtrar)">
+      <div class="kpi kpi-total" data-estado="" role="button" tabindex="0" style="--i:0">
+        <span class="kpi-etiqueta">Artículos filtrados</span>
+        <span class="kpi-fila"><span class="kpi-valor" id="kpi-total">0</span></span>
+        <span class="kpi-detalle">de <span id="kpi-total-general">0</span> totales · <span id="kpi-sin-venta">0</span> sin dato de venta</span>
+      </div>
+      <div class="kpi kpi-critico" data-estado="semaforo-rojo" role="button" tabindex="0" style="--i:1">
+        <span class="kpi-etiqueta">Riesgo de quiebre</span>
+        <span class="kpi-fila"><span class="kpi-valor" id="kpi-rojo">0</span><span class="kpi-cta">Ver estos →</span></span>
+        <span class="kpi-detalle"><span id="kpi-detalle-rojo">Riesgo inmediato</span> · <span id="kpi-atencion">0</span> en atención</span>
+      </div>
+      <div class="kpi kpi-normal" data-estado="semaforo-verde" role="button" tabindex="0" style="--i:2">
+        <span class="kpi-etiqueta">Normal</span>
+        <span class="kpi-fila"><span class="kpi-valor" id="kpi-verde">0</span><span class="kpi-cta">Ver estos →</span></span>
+        <span class="kpi-detalle" id="kpi-detalle-verde">Cobertura adecuada</span>
+      </div>
+      <div class="kpi kpi-sobrestock" data-estado="semaforo-sobrestock" role="button" tabindex="0" style="--i:3">
+        <span class="kpi-etiqueta">Sobrestock</span>
+        <span class="kpi-fila"><span class="kpi-valor" id="kpi-sobrestock">0</span><span class="kpi-cta">Ver estos →</span></span>
+        <span class="kpi-detalle" id="kpi-detalle-sobrestock">Exceso de cobertura</span>
+      </div>
+    </section>
+
     <div class="barra-filtros">
       <div class="filtro" id="filtro-deposito-wrap">
         <label>Depósito</label>
@@ -126,29 +153,6 @@
     </div>
 
     <div class="filtros-activos" id="filtros-activos"></div>
-
-    <section class="kpis" id="kpis" aria-label="Resumen de stock (click para filtrar)">
-      <div class="kpi kpi-total" data-estado="" role="button" tabindex="0" style="--i:0">
-        <span class="kpi-etiqueta">Artículos filtrados</span>
-        <span class="kpi-fila"><span class="kpi-valor" id="kpi-total">0</span></span>
-        <span class="kpi-detalle">de <span id="kpi-total-general">0</span> totales · <span id="kpi-sin-venta">0</span> sin dato de venta</span>
-      </div>
-      <div class="kpi kpi-critico" data-estado="semaforo-rojo" role="button" tabindex="0" style="--i:1">
-        <span class="kpi-etiqueta">Riesgo de quiebre</span>
-        <span class="kpi-fila"><span class="kpi-valor" id="kpi-rojo">0</span><span class="kpi-cta">Ver estos →</span></span>
-        <span class="kpi-detalle"><span id="kpi-detalle-rojo">Riesgo inmediato</span> · <span id="kpi-atencion">0</span> en atención</span>
-      </div>
-      <div class="kpi kpi-normal" data-estado="semaforo-verde" role="button" tabindex="0" style="--i:2">
-        <span class="kpi-etiqueta">Normal</span>
-        <span class="kpi-fila"><span class="kpi-valor" id="kpi-verde">0</span><span class="kpi-cta">Ver estos →</span></span>
-        <span class="kpi-detalle" id="kpi-detalle-verde">Cobertura adecuada</span>
-      </div>
-      <div class="kpi kpi-sobrestock" data-estado="semaforo-sobrestock" role="button" tabindex="0" style="--i:3">
-        <span class="kpi-etiqueta">Sobrestock</span>
-        <span class="kpi-fila"><span class="kpi-valor" id="kpi-sobrestock">0</span><span class="kpi-cta">Ver estos →</span></span>
-        <span class="kpi-detalle" id="kpi-detalle-sobrestock">Exceso de cobertura</span>
-      </div>
-    </section>
 
     <div class="tabla-card">
       <div class="tabla-scroll" id="scroll-deposito">

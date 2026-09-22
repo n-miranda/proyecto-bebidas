@@ -739,18 +739,23 @@ table {
    todo el ancho; la descripcion se corta con puntos suspensivos. */
 #tabla-stock { table-layout: fixed; }
 
+/* Encabezado de tabla mas grande y con un borde de acento mas grueso que
+   el resto de las lineas de la grilla -- marca de un vistazo donde arranca
+   el listado (pedido del usuario, 2026-09-22), en las dos tablas
+   (#tabla-stock y #tabla-stock-general). */
 thead th {
   position: sticky;
   top: 0;
   z-index: 2;
   background: var(--encabezado-tabla);
-  color: var(--tinta-secundaria);
+  color: var(--tinta-primaria);
   text-align: left;
-  padding: 10px 12px;
-  font-weight: 600;
-  font-size: 13px;
+  padding: 12px 12px;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.01em;
   line-height: 1.25;
-  border-bottom: 1px solid var(--gridline);
+  border-bottom: 2px solid var(--acento);
   user-select: none;
   transition: color var(--transicion), background var(--transicion);
 }
@@ -856,8 +861,11 @@ tbody tr.semaforo-neutro td.col-dias { color: var(--estado-neutro-texto); }
 #tabla-stock-general td.stock-riesgo.sg-neutro { color: var(--estado-neutro-texto); }
 
 /* Encabezado mas grande que los datos, invertido respecto de la tabla
-   principal (pedido del usuario, 2026-09-22). */
-#tabla-stock-general thead th { font-size: 15px; }
+   principal (pedido del usuario, 2026-09-22). El 17px es a proposito un
+   escalon por encima del thead th base (15px): esta tabla ya invierte la
+   jerarquia normal (encabezado > dato), asi que necesita quedar un poco
+   mas grande todavia para que la diferencia se note. */
+#tabla-stock-general thead th { font-size: 17px; }
 #tabla-stock-general tbody td { font-size: 12px; }
 
 /* Quiebre cubierto: fila critica con transito > 0. Sin esta marca, el
