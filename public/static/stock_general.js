@@ -2,6 +2,10 @@
   "use strict";
 
   const fmtDosDecimales = new Intl.NumberFormat("es-AR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  // El stock es una cantidad de bultos concreta: se muestra entero, sin
+  // decimales (pedido del usuario, 2026-09-22). El transito sigue con 2
+  // decimales -- es pendiente, no el stock en si.
+  const fmtEntero = new Intl.NumberFormat("es-AR", { maximumFractionDigits: 0 });
 
   const encabezadoTabla = document.getElementById("encabezado-tabla");
   const cuerpoTabla = document.getElementById("cuerpo-tabla");
@@ -176,7 +180,7 @@
         // Sin transito en ese deposito no se agrega title: el tooltip del
         // navegador no aparece si el atributo no esta presente.
         const titulo = transito > 0 ? ` title="Tránsito: ${fmtDosDecimales.format(transito)} bultos"` : "";
-        return `<td class="${clases}"${titulo}>${fmtDosDecimales.format(fila.stockPorDeposito[d] ?? 0)}</td>`;
+        return `<td class="${clases}"${titulo}>${fmtEntero.format(fila.stockPorDeposito[d] ?? 0)}</td>`;
       };
       cuerpoTabla.innerHTML = filas.map((fila) => `
       <tr>
@@ -210,7 +214,7 @@
     const lineas = filas.map((fila) => [
       csvEscapar(fila.codigo),
       csvEscapar(fila.descripcion),
-      ...depositos.map((d) => fmtDosDecimales.format(fila.stockPorDeposito[d] ?? 0)),
+      ...depositos.map((d) => fmtEntero.format(fila.stockPorDeposito[d] ?? 0)),
       fmtDosDecimales.format(fila.transitoTotal),
       csvEscapar(fila.novedad),
     ].join(";"));
