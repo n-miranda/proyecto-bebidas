@@ -35,7 +35,6 @@
   const btnExportarPdf = document.getElementById("btn-exportar-pdf");
   const btnExportarCantidadEl = document.getElementById("btn-exportar-cantidad");
   const btnExportarPdfCantidadEl = document.getElementById("btn-exportar-pdf-cantidad");
-  const btnStockGeneral = document.getElementById("btn-stock-general");
   const inputBuscador = document.getElementById("filtro-buscador");
   const checkSinClasificar = document.getElementById("filtro-sin-clasificar");
   const contadorSinClasificarEl = document.getElementById("contador-sin-clasificar");
@@ -59,6 +58,27 @@
   };
   const valorPrevioKpi = { total: 0, rojo: 0, verde: 0, sobrestock: 0 };
   const reducirMovimiento = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+  // ---------- Vista "Resumen por codigo" (antes /stock-general en otra
+  // pestana) -- ver cambiarVista() mas abajo para como se togglea.
+  const vistaTabs = document.querySelectorAll(".vista-tab");
+  const scrollDeposito = document.getElementById("scroll-deposito");
+  const scrollResumen = document.getElementById("scroll-resumen");
+  const accionesDeposito = document.getElementById("acciones-deposito");
+  const accionesResumen = document.getElementById("acciones-resumen");
+  const filtroDepositoWrap = document.getElementById("filtro-deposito-wrap");
+  const filtroClusterWrap = document.getElementById("filtro-cluster-wrap");
+  const filtroColumnasWrap = document.getElementById("filtro-columnas-wrap");
+  const kpisEl = document.getElementById("kpis");
+  const encabezadoTablaResumen = document.getElementById("encabezado-tabla-resumen");
+  const cuerpoTablaResumen = document.getElementById("cuerpo-tabla-resumen");
+  const btnExportarResumen = document.getElementById("btn-exportar-resumen");
+
+  let vistaActual = "deposito"; // "deposito" | "resumen"
+  let filasResumen = [];
+  let depositosResumen = [];
+  let ordenCampoResumen = null;
+  let ordenAscendenteResumen = true;
 
   // Los KPI cuentan de 0 al valor solo en la carga inicial (o tras "Actualizar
   // datos"); al filtrar en vivo se muestra el valor directo, sin animar.
@@ -175,6 +195,231 @@
       .map((campo) => `[data-campo="${campo}"] { display: none; }`)
       .join("\n");
   }
+
+  // Un mismo codigo puede traer una fila por deposito (ver consolidador.py):
+  // se agrupa por codigo y el stock de cada deposito pasa a ser una columna
+  // propia, en vez de una fila aparte -- para que los depositos se vean uno
+  // al lado del otro. Reusa 'articulos', que ya esta cargado para la vista
+  // "Por deposito"; no hace falta un segundo fetch.
+  function agruparPorCodigo(lista) {
+    const porCodigo = new Map();
+    for (const art of lista) {
+      if (art.deposito === "SIN DEPOSITO") continue;
+      if (!porCodigo.has(art.codigo)) {
+        porCodigo.set(art.codigo, {
+          codigo: art.codigo, descripcion: art.descripcion, novedad: art.novedad || "",
+          transitoTotal: 0, stockPorDeposito: {}, riesgoPorDeposito: {}, transitoPorDeposito: {},
+        });
+      }
+      const fila = porCodigo.get(art.codigo);
+      fila.stockPorDeposito[art.deposito] = art.stock_bultos;
+      // Riesgo y transito propios de este deposito -- para pintar el stock
+      // actual con el mismo semaforo de la vista "Por deposito" y mostrar el
+      // transito de ese deposito puntual al apoyar el cursor (ver renderResumen()).
+      fila.riesgoPorDeposito[art.deposito] = art.clase_riesgo || "neutro";
+      fila.transitoPorDeposito[art.deposito] = art.transito_bultos || 0;
+      // Transito ya viene por (codigo, deposito) -- ver consolidador.py --
+      // aca se suma entre depositos porque esta vista es un resumen por
+      // codigo, no tiene una columna por deposito para el transito.
+      fila.transitoTotal += art.transito_bultos || 0;
+    }
+    return [...porCodigo.values()].sort((a, b) => Number(a.codigo) - Number(b.codigo));
+  }
+
+  function depositosPresentes(filas) {
+    const set = new Set();
+    for (const fila of filas) {
+      for (const deposito of Object.keys(fila.stockPorDeposito)) set.add(deposito);
+    }
+    return [...set].sort((a, b) => a.localeCompare(b, "es"));
+  }
+
+  // "dep:OB" = columna de stock del deposito OB; el resto usa el nombre del campo.
+  function columnasResumen() {
+    return [
+      { campo: "codigo", etiqueta: "Código" },
+      { campo: "descripcion", etiqueta: "Descripción", texto: true },
+      ...depositosResumen.map((d) => ({ campo: `dep:${d}`, etiqueta: `${d} (bultos)`, num: true })),
+      { campo: "transito", etiqueta: "Tránsito (bultos)", num: true },
+      { campo: "novedad", etiqueta: "Novedad", texto: true },
+    ];
+  }
+
+  function valorOrdenResumen(fila, campo) {
+    if (campo === "codigo") return Number(fila.codigo);
+    if (campo === "descripcion") return fila.descripcion.toLowerCase();
+    if (campo === "transito") return fila.transitoTotal;
+    if (campo === "novedad") return fila.novedad ? fila.novedad.toLowerCase() : null;
+    return fila.stockPorDeposito[campo.slice(4)] ?? 0;
+  }
+
+  function ordenarResumen(filas) {
+    if (!ordenCampoResumen) return [...filas];
+    return [...filas].sort((a, b) => {
+      const va = valorOrdenResumen(a, ordenCampoResumen);
+      const vb = valorOrdenResumen(b, ordenCampoResumen);
+      // Sin dato (ej. sin novedad) siempre al final, asc o desc.
+      if (va === null || vb === null) return va === vb ? 0 : (va === null ? 1 : -1);
+      if (va < vb) return ordenAscendenteResumen ? -1 : 1;
+      if (va > vb) return ordenAscendenteResumen ? 1 : -1;
+      return 0;
+    });
+  }
+
+  // Solo el buscador filtra esta vista -- deposito/cluster no aplican: cada
+  // deposito ya es su propia columna, filtrarlos por fila no tendria sentido.
+  function filasResumenFiltradas() {
+    const busqueda = inputBuscador.value.trim().toLowerCase();
+    const base = !busqueda
+      ? filasResumen
+      : filasResumen.filter((fila) =>
+        fila.codigo.toLowerCase().includes(busqueda) ||
+        fila.descripcion.toLowerCase().includes(busqueda)
+      );
+    return ordenarResumen(base);
+  }
+
+  function renderEncabezadoResumen() {
+    encabezadoTablaResumen.innerHTML = "<tr>" + columnasResumen().map((c) => {
+      const activa = c.campo === ordenCampoResumen;
+      const clases = [c.num ? "num" : "", activa ? "orden-activo" : "", activa && !ordenAscendenteResumen ? "orden-desc" : ""]
+        .filter(Boolean).join(" ");
+      const aria = !activa ? "none" : (ordenAscendenteResumen ? "ascending" : "descending");
+      const titulo = !activa
+        ? (c.texto ? "Ordenar de A a Z" : "Ordenar de menor a mayor")
+        : (ordenAscendenteResumen ? (c.texto ? "Ordenar de Z a A" : "Ordenar de mayor a menor") : "Quitar el orden");
+      return `<th data-campo="${escaparHtml(c.campo)}"${clases ? ` class="${clases}"` : ""} aria-sort="${aria}" title="${titulo}">${escaparHtml(c.etiqueta)}</th>`;
+    }).join("") + "</tr>";
+  }
+
+  encabezadoTablaResumen.addEventListener("click", (ev) => {
+    const th = ev.target.closest("th[data-campo]");
+    if (!th) return;
+    const campo = th.dataset.campo;
+    if (campo !== ordenCampoResumen) {
+      ordenCampoResumen = campo;
+      ordenAscendenteResumen = true;
+    } else if (ordenAscendenteResumen) {
+      ordenAscendenteResumen = false;
+    } else {
+      ordenCampoResumen = null;
+      ordenAscendenteResumen = true;
+    }
+    renderEncabezadoResumen();
+    renderResumen();
+  });
+
+  function renderResumen() {
+    const filas = filasResumenFiltradas();
+
+    if (filas.length === 0) {
+      cuerpoTablaResumen.innerHTML = `<tr><td colspan="${4 + depositosResumen.length}">No hay artículos que coincidan con la búsqueda.</td></tr>`;
+    } else {
+      // La columna que ordena queda resaltada de punta a punta, igual que
+      // en la vista "Por deposito".
+      const act = (campo, extra = "") => {
+        const clases = [extra, campo === ordenCampoResumen ? "orden-activo" : ""].filter(Boolean).join(" ");
+        return clases ? ` class="${clases}"` : "";
+      };
+      const celdaStock = (fila, d) => {
+        const activa = `dep:${d}` === ordenCampoResumen;
+        const clases = ["num", "stock-riesgo", `sg-${fila.riesgoPorDeposito[d] || "neutro"}`, activa ? "orden-activo" : ""]
+          .filter(Boolean).join(" ");
+        const transito = fila.transitoPorDeposito[d] || 0;
+        // Sin transito en ese deposito no se agrega title: el tooltip del
+        // navegador no aparece si el atributo no esta presente.
+        const titulo = transito > 0 ? ` title="Tránsito: ${fmtDosDecimales.format(transito)} bultos"` : "";
+        return `<td class="${clases}"${titulo}>${fmtEntero.format(fila.stockPorDeposito[d] ?? 0)}</td>`;
+      };
+      cuerpoTablaResumen.innerHTML = filas.map((fila) => `
+      <tr>
+        <td${act("codigo")}>${fila.codigo}</td>
+        <td${act("descripcion")} title="${escaparHtml(fila.descripcion)}">${fila.descripcion}</td>
+        ${depositosResumen.map((d) => celdaStock(fila, d)).join("")}
+        <td${act("transito", "num")}>${fmtDosDecimales.format(fila.transitoTotal)}</td>
+        <td${act("novedad", "novedad-celda")}>${escaparHtml(fila.novedad)}</td>
+      </tr>`).join("");
+    }
+
+    totalesEl.textContent = `${filas.length} de ${filasResumen.length} códigos`;
+  }
+
+  function csvEscaparResumen(texto) {
+    const t = String(texto);
+    return /[;"\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
+  }
+
+  // "Exportar a Excel" de esta vista: mismo mecanismo que la vista "Por
+  // deposito" (CSV con punto y coma + BOM UTF-8), pero con la forma de esta
+  // tabla (una columna de stock por deposito) y respetando la busqueda.
+  function exportarResumenExcel() {
+    const filas = filasResumenFiltradas();
+    const encabezado = ["Código", "Descripción", ...depositosResumen.map((d) => `${d} (bultos)`), "Tránsito (bultos)", "Novedad"].join(";");
+    const lineas = filas.map((fila) => [
+      csvEscaparResumen(fila.codigo),
+      csvEscaparResumen(fila.descripcion),
+      ...depositosResumen.map((d) => fmtEntero.format(fila.stockPorDeposito[d] ?? 0)),
+      fmtDosDecimales.format(fila.transitoTotal),
+      csvEscaparResumen(fila.novedad),
+    ].join(";"));
+    const csv = "﻿" + [encabezado, ...lineas].join("\r\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const fecha = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `stock_general_${fecha}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  btnExportarResumen.addEventListener("click", exportarResumenExcel);
+
+  // Dispara el render de lo que este visible en este momento (la busqueda es
+  // el unico filtro compartido entre las dos vistas).
+  function renderActual() {
+    if (vistaActual === "resumen") renderResumen();
+    else render();
+  }
+
+  // Cambia entre "Por deposito" y "Resumen por codigo" sin recargar: son la
+  // misma pagina, mismos datos ya en memoria -- antes "Resumen por codigo"
+  // era /stock-general en una pestana aparte (pedido del usuario,
+  // 2026-09-22, "no debe abrir en pestana aparte"). El titulo de la
+  // solapa y el tab resaltado son la senal de que vista esta activa.
+  function cambiarVista(nueva) {
+    if (nueva === vistaActual) return;
+    vistaActual = nueva;
+    const esResumen = nueva === "resumen";
+
+    vistaTabs.forEach((btn) => {
+      const activa = btn.dataset.vista === nueva;
+      btn.classList.toggle("vista-tab-activa", activa);
+      btn.setAttribute("aria-selected", String(activa));
+    });
+
+    scrollDeposito.hidden = esResumen;
+    scrollResumen.hidden = !esResumen;
+    accionesDeposito.hidden = esResumen;
+    accionesResumen.hidden = !esResumen;
+    filtroDepositoWrap.hidden = esResumen;
+    filtroClusterWrap.hidden = esResumen;
+    filtroColumnasWrap.hidden = esResumen;
+    kpisEl.hidden = esResumen;
+    filtrosActivosEl.hidden = esResumen;
+
+    document.title = esResumen
+      ? "Resumen por código — Unificador de Stock"
+      : "Unificador de Stock — Bebidas";
+
+    renderActual();
+  }
+
+  vistaTabs.forEach((btn) => {
+    btn.addEventListener("click", () => cambiarVista(btn.dataset.vista));
+  });
 
   function formatearDiasStock(valor, stockMasTransito) {
     if (valor === null || valor === undefined) {
@@ -294,7 +539,12 @@
 
   function aplicarFiltroEstado(estado) {
     filtroEstado = (filtroEstado === estado) ? null : estado;
-    render();
+    // El semaforo de riesgo es propio de la vista "Por deposito" -- si el
+    // click en un KPI llega estando en "Resumen por codigo", primero se
+    // vuelve a esa vista (cambiarVista ya dispara el render con el filtro
+    // recien asignado).
+    if (vistaActual !== "deposito") cambiarVista("deposito");
+    else render();
   }
 
   // Resumen de filtros activos como chips removibles (modelo UX provisto
@@ -509,7 +759,7 @@
   // Estado del orden en cada encabezado: clase para la flecha, aria-sort para
   // lectores de pantalla y un tooltip que dice que hace el proximo clic.
   function actualizarEncabezadosOrden() {
-    document.querySelectorAll("th[data-campo]").forEach((th) => {
+    document.querySelectorAll("#tabla-stock thead th[data-campo]").forEach((th) => {
       const activa = th.dataset.campo === ordenCampo;
       const texto = CAMPOS_TEXTO.has(th.dataset.campo);
       th.classList.toggle("orden-activo", activa);
@@ -523,7 +773,7 @@
     });
   }
 
-  document.querySelectorAll("th[data-campo]").forEach((th) => {
+  document.querySelectorAll("#tabla-stock thead th[data-campo]").forEach((th) => {
     th.addEventListener("click", () => {
       const campo = th.dataset.campo;
       if (campo !== ordenCampo) {
@@ -540,7 +790,7 @@
     });
   });
 
-  inputBuscador.addEventListener("input", render);
+  inputBuscador.addEventListener("input", renderActual);
 
   const ICONO_AVISO_SVG =
     '<svg class="aviso-icono" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" ' +
@@ -682,13 +932,6 @@
 
   btnExportar.addEventListener("click", exportarCSV);
   btnExportarPdf.addEventListener("click", exportarPDF);
-  // Vincula el dashboard principal con Stock general: la busqueda vigente
-  // (codigo o descripcion) viaja como parametro y esa vista la precarga.
-  btnStockGeneral.addEventListener("click", () => {
-    const busqueda = inputBuscador.value.trim();
-    const url = "/stock-general" + (busqueda ? `?q=${encodeURIComponent(busqueda)}` : "");
-    window.open(url, "_blank");
-  });
 
   async function cargarTodo() {
     const [respStock, respMeta] = await Promise.all([
@@ -707,8 +950,21 @@
     poblarFiltros();
     animarKpiEnEstaCarga = true;
     actualizarEncabezadosOrden();
-    render();
+
+    // Resumen por codigo: se agrupa aca (mismo 'articulos' recien cargado,
+    // sin fetch aparte) para que las dos vistas viajen siempre sincronizadas.
+    // El thead se reconstruye ahora porque los depositos presentes pueden
+    // cambiar de una carga a otra; el tbody recien se pinta si esa vista
+    // esta visible (renderActual, mas abajo).
+    filasResumen = agruparPorCodigo(articulos);
+    depositosResumen = depositosPresentes(filasResumen);
+    ordenCampoResumen = null;
+    ordenAscendenteResumen = true;
+    renderEncabezadoResumen();
+
+    renderActual();
   }
+
 
   cargarTodo().catch((err) => {
     mostrarToast("No se pudieron cargar los datos: " + err.message, "error");

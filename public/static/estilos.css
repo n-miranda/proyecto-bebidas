@@ -56,6 +56,13 @@
 
 * { box-sizing: border-box; }
 
+/* Garantiza que el atributo [hidden] oculte el elemento aunque su propia
+   clase le fije un display (flex/grid): sin esto, un componente con
+   "display: flex" se seguiria viendo pese al hidden (el CSS del autor le
+   gana al del user-agent). Lo necesitan los bloques que se esconden al
+   cambiar de vista (ver .vista-tabs). */
+[hidden] { display: none !important; }
+
 /* La pagina ocupa exactamente la pantalla: barra + filtros + KPI arriba y la
    tabla se estira por el resto, con scroll propio (encabezado fijo). */
 body {
@@ -162,6 +169,18 @@ body {
 
 .ventana-ventas:empty { display: none; }
 
+.etiqueta-solo-lectura {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(247, 240, 230, 0.12);
+  color: rgba(247, 240, 230, 0.65);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: help;
+}
+
 /* Enlace de vuelta al dashboard principal desde Stock general (misma
    apariencia que el boton "Actualizar datos", pero es un link). */
 .volver-dashboard {
@@ -179,18 +198,6 @@ body {
 }
 
 .volver-dashboard:hover { background: #33332e; border-color: #5a5a52; }
-
-.etiqueta-solo-lectura {
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: rgba(247, 240, 230, 0.12);
-  color: rgba(247, 240, 230, 0.65);
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  cursor: help;
-}
 
 #btn-actualizar {
   display: flex;
@@ -484,7 +491,7 @@ body {
   flex-shrink: 0;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 9px;
+  gap: 8px;
 }
 
 .kpi {
@@ -496,7 +503,7 @@ body {
   gap: 2px;
   text-align: left;
   cursor: pointer;
-  padding: 9px 12px 8px;
+  padding: 8px 10px 7px;
   background: var(--superficie);
   border: 1px solid var(--gridline);
   border-radius: var(--radio);
@@ -510,7 +517,7 @@ body {
   content: "";
   position: absolute;
   inset: 0 0 auto 0;
-  height: 3px;
+  height: 2px;
   background: var(--kpi-color);
 }
 
@@ -524,8 +531,8 @@ body {
 .kpi-sobrestock { --kpi-color: var(--estado-sobrestock); --kpi-texto: var(--estado-sobrestock-texto); }
 
 .kpi-etiqueta {
-  margin-top: 3px;
-  font-size: 11px;
+  margin-top: 2px;
+  font-size: 10px;
   font-weight: 600;
 }
 
@@ -534,9 +541,9 @@ body {
 .kpi-critico .kpi-etiqueta::before {
   content: "";
   display: inline-block;
-  width: 7px;
-  height: 7px;
-  margin-right: 6px;
+  width: 6px;
+  height: 6px;
+  margin-right: 5px;
   border-radius: 50%;
   background: var(--estado-critico);
 }
@@ -545,12 +552,12 @@ body {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 6px;
+  gap: 5px;
 }
 
 .kpi-valor {
   font-family: var(--fuente-display);
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 700;
   line-height: 1.05;
   color: var(--kpi-texto);
@@ -558,13 +565,13 @@ body {
 }
 
 .kpi-cta {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   color: var(--acento);
   white-space: nowrap;
 }
 
-.kpi-detalle { font-size: 11px; }
+.kpi-detalle { font-size: 10px; }
 
 @media (prefers-reduced-motion: no-preference) {
   .kpi {
@@ -634,6 +641,42 @@ body {
 
 .check-toggle input { accent-color: var(--acento); width: 15px; height: 15px; }
 
+/* Selector de vista (antes "Stock general" abria /stock-general en otra
+   pestana; ahora esa tabla vive en esta misma ventana y se cambia con este
+   selector -- necesita ser bien visible, no un link mas, para que quede
+   claro en todo momento cual de las dos vistas esta activa). */
+.vista-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--plano-pagina);
+  border: 1px solid var(--gridline);
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.vista-tab {
+  padding: 7px 16px;
+  border: none;
+  border-radius: 999px;
+  background: none;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tinta-secundaria);
+  cursor: pointer;
+  transition: background var(--transicion), color var(--transicion);
+}
+
+.vista-tab:hover { color: var(--tinta-primaria); }
+
+.vista-tab.vista-tab-activa {
+  background: var(--acento);
+  color: #fff;
+}
+
+.vista-tab.vista-tab-activa:hover { color: #fff; }
+
 /* ---------- Tabla ---------- */
 
 .tabla-card {
@@ -656,6 +699,20 @@ body {
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
+}
+
+/* En el dashboard principal esta barra ya no vive pegada arriba de la
+   tabla (dentro de .tabla-card): quedo suelta, arriba de los filtros
+   (pedido del usuario, 2026-09-22, "invertir" el orden de las dos
+   barras). Necesita su propio marco -- mismo look que .barra-filtros --
+   en vez del border-bottom que la separaba de la tabla cuando estaba
+   adentro. La pagina /stock-general (standalone, legacy) sigue usando
+   .tabla-toolbar tal cual, adentro de su .tabla-card. */
+.tabla-toolbar-independiente {
+  border-bottom: none;
+  background: var(--superficie);
+  border: 1px solid var(--gridline);
+  border-radius: var(--radio);
 }
 
 .tabla-toolbar-titulo {
@@ -694,18 +751,23 @@ table {
    todo el ancho; la descripcion se corta con puntos suspensivos. */
 #tabla-stock { table-layout: fixed; }
 
+/* Encabezado de tabla mas grande y con un borde de acento mas grueso que
+   el resto de las lineas de la grilla -- marca de un vistazo donde arranca
+   el listado (pedido del usuario, 2026-09-22), en las dos tablas
+   (#tabla-stock y #tabla-stock-general). */
 thead th {
   position: sticky;
   top: 0;
   z-index: 2;
   background: var(--encabezado-tabla);
-  color: var(--tinta-secundaria);
+  color: var(--tinta-primaria);
   text-align: left;
-  padding: 10px 12px;
-  font-weight: 600;
-  font-size: 13px;
+  padding: 12px 12px;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.01em;
   line-height: 1.25;
-  border-bottom: 1px solid var(--gridline);
+  border-bottom: 2px solid var(--acento);
   user-select: none;
   transition: color var(--transicion), background var(--transicion);
 }
@@ -811,8 +873,11 @@ tbody tr.semaforo-neutro td.col-dias { color: var(--estado-neutro-texto); }
 #tabla-stock-general td.stock-riesgo.sg-neutro { color: var(--estado-neutro-texto); }
 
 /* Encabezado mas grande que los datos, invertido respecto de la tabla
-   principal (pedido del usuario, 2026-09-22). */
-#tabla-stock-general thead th { font-size: 15px; }
+   principal (pedido del usuario, 2026-09-22). El 17px es a proposito un
+   escalon por encima del thead th base (15px): esta tabla ya invierte la
+   jerarquia normal (encabezado > dato), asi que necesita quedar un poco
+   mas grande todavia para que la diferencia se note. */
+#tabla-stock-general thead th { font-size: 17px; }
 #tabla-stock-general tbody td { font-size: 12px; }
 
 /* Quiebre cubierto: fila critica con transito > 0. Sin esta marca, el

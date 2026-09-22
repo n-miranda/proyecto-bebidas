@@ -43,54 +43,43 @@
   </div>
 
   <main class="contenedor">
-    <div class="barra-filtros">
-      <div class="filtro">
-        <label>Depósito</label>
-        <div class="multiselect" id="multiselect-deposito">
-          <button type="button" class="multiselect-boton">Todos</button>
-          <div class="multiselect-panel" hidden>
-            <div class="multiselect-acciones">
-              <button type="button" data-accion="todos">Marcar todos</button>
-              <button type="button" data-accion="ninguno">Desmarcar todos</button>
-            </div>
-            <div class="multiselect-opciones"></div>
-          </div>
-        </div>
+    <!-- Antes "Stock general" era un boton que abria /stock-general en una
+         pestana nueva. Ahora es una 2da vista de esta misma tabla, elegida
+         con este selector -- asi el usuario nunca pierde de vista los
+         filtros/KPIs, y el tab resaltado deja bien claro cual de las dos
+         esta mirando (ver app.js::cambiarVista). Va antes que los filtros
+         (pedido del usuario, 2026-09-22): primero se elige la vista, recien
+         despues los filtros que le corresponden a esa vista. -->
+    <div class="tabla-toolbar tabla-toolbar-independiente">
+      <div class="vista-tabs" role="tablist" aria-label="Vista de la tabla de stock">
+        <button type="button" class="vista-tab vista-tab-activa" data-vista="deposito" role="tab" aria-selected="true">Por depósito</button>
+        <button type="button" class="vista-tab" data-vista="resumen" role="tab" aria-selected="false" title="Una fila por código, una columna por depósito">Resumen por código</button>
       </div>
-      <div class="filtro">
-        <label>Clúster</label>
-        <div class="multiselect" id="multiselect-cluster">
-          <button type="button" class="multiselect-boton">Todos</button>
-          <div class="multiselect-panel" hidden>
-            <div class="multiselect-acciones">
-              <button type="button" data-accion="todos">Marcar todos</button>
-              <button type="button" data-accion="ninguno">Desmarcar todos</button>
-            </div>
-            <div class="multiselect-opciones"></div>
-          </div>
-        </div>
+      <div class="tabla-toolbar-acciones" id="acciones-deposito">
+        <label class="check-toggle">
+          <input id="filtro-sin-clasificar" type="checkbox">
+          <span>Solo sin clasificar (<span id="contador-sin-clasificar">0</span>)</span>
+        </label>
+        <button id="btn-exportar-pdf" type="button" class="btn-secundario">
+          <span>Exportar <span id="btn-exportar-pdf-cantidad">0</span> filas a PDF</span>
+        </button>
+        <button id="btn-exportar" type="button" class="btn-primario">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 19h16"/></svg>
+          <span>Exportar <span id="btn-exportar-cantidad">0</span> filas a Excel</span>
+        </button>
       </div>
-      <div class="filtro filtro-buscador">
-        <label for="filtro-buscador">Buscar por código o descripción</label>
-        <input id="filtro-buscador" type="text" placeholder="Ej.: 100234 o gaseosa cola">
-      </div>
-      <div class="filtro">
-        <label>Columnas</label>
-        <div class="multiselect" id="multiselect-columnas">
-          <button type="button" class="multiselect-boton">Todas</button>
-          <div class="multiselect-panel" hidden>
-            <div class="multiselect-acciones">
-              <button type="button" data-accion="todos">Marcar todos</button>
-              <button type="button" data-accion="ninguno">Desmarcar todos</button>
-            </div>
-            <div class="multiselect-opciones"></div>
-          </div>
-        </div>
+      <div class="tabla-toolbar-acciones" id="acciones-resumen" hidden>
+        <button id="btn-exportar-resumen" type="button" class="btn-primario">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 19h16"/></svg>
+          Exportar a Excel
+        </button>
       </div>
     </div>
 
-    <div class="filtros-activos" id="filtros-activos"></div>
-
+    <!-- Pedido del usuario, 2026-09-22: los KPI quedan arriba de los
+         filtros (antes al reves). Los chips de "filtros activos" siguen
+         pegados debajo de la barra de filtros, no de los KPI: son un
+         resumen de esa barra, no de las tarjetas. -->
     <section class="kpis" id="kpis" aria-label="Resumen de stock (click para filtrar)">
       <div class="kpi kpi-total" data-estado="" role="button" tabindex="0" style="--i:0">
         <span class="kpi-etiqueta">Artículos filtrados</span>
@@ -114,27 +103,56 @@
       </div>
     </section>
 
-    <div class="tabla-card">
-      <div class="tabla-toolbar">
-        <div>
-          <h2 class="tabla-toolbar-titulo">Stock general</h2>
-        </div>
-        <div class="tabla-toolbar-acciones">
-          <label class="check-toggle">
-            <input id="filtro-sin-clasificar" type="checkbox">
-            <span>Solo sin clasificar (<span id="contador-sin-clasificar">0</span>)</span>
-          </label>
-          <button id="btn-stock-general" type="button" class="btn-primario" title="Una fila por código, una columna por depósito">Stock general</button>
-          <button id="btn-exportar-pdf" type="button" class="btn-secundario">
-            <span>Exportar <span id="btn-exportar-pdf-cantidad">0</span> filas a PDF</span>
-          </button>
-          <button id="btn-exportar" type="button" class="btn-primario">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 19h16"/></svg>
-            <span>Exportar <span id="btn-exportar-cantidad">0</span> filas a Excel</span>
-          </button>
+    <div class="barra-filtros">
+      <div class="filtro" id="filtro-deposito-wrap">
+        <label>Depósito</label>
+        <div class="multiselect" id="multiselect-deposito">
+          <button type="button" class="multiselect-boton">Todos</button>
+          <div class="multiselect-panel" hidden>
+            <div class="multiselect-acciones">
+              <button type="button" data-accion="todos">Marcar todos</button>
+              <button type="button" data-accion="ninguno">Desmarcar todos</button>
+            </div>
+            <div class="multiselect-opciones"></div>
+          </div>
         </div>
       </div>
-      <div class="tabla-scroll">
+      <div class="filtro" id="filtro-cluster-wrap">
+        <label>Clúster</label>
+        <div class="multiselect" id="multiselect-cluster">
+          <button type="button" class="multiselect-boton">Todos</button>
+          <div class="multiselect-panel" hidden>
+            <div class="multiselect-acciones">
+              <button type="button" data-accion="todos">Marcar todos</button>
+              <button type="button" data-accion="ninguno">Desmarcar todos</button>
+            </div>
+            <div class="multiselect-opciones"></div>
+          </div>
+        </div>
+      </div>
+      <div class="filtro filtro-buscador">
+        <label for="filtro-buscador">Buscar por código o descripción</label>
+        <input id="filtro-buscador" type="text" placeholder="Ej.: 100234 o gaseosa cola">
+      </div>
+      <div class="filtro" id="filtro-columnas-wrap">
+        <label>Columnas</label>
+        <div class="multiselect" id="multiselect-columnas">
+          <button type="button" class="multiselect-boton">Todas</button>
+          <div class="multiselect-panel" hidden>
+            <div class="multiselect-acciones">
+              <button type="button" data-accion="todos">Marcar todos</button>
+              <button type="button" data-accion="ninguno">Desmarcar todos</button>
+            </div>
+            <div class="multiselect-opciones"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="filtros-activos" id="filtros-activos"></div>
+
+    <div class="tabla-card">
+      <div class="tabla-scroll" id="scroll-deposito">
         <table id="tabla-stock">
           <colgroup>
             <col style="width: 3%">
@@ -162,6 +180,18 @@
           </thead>
           <tbody id="cuerpo-tabla">
             <tr><td colspan="9">Cargando artículos...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <!-- Resumen por codigo: una fila por codigo, una columna de stock por
+           deposito (en vez de una fila por deposito). Las columnas dependen
+           de que depositos traiga la carga (ver app.js::renderEncabezadoResumen),
+           por eso el thead se arma en JS y no queda fijo aca. -->
+      <div class="tabla-scroll" id="scroll-resumen" hidden>
+        <table id="tabla-stock-general">
+          <thead id="encabezado-tabla-resumen"></thead>
+          <tbody id="cuerpo-tabla-resumen">
+            <tr><td>Cargando artículos...</td></tr>
           </tbody>
         </table>
       </div>
