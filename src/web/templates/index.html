@@ -46,6 +46,39 @@
   </div>
 
   <main class="contenedor">
+    <!-- Antes "Stock general" era un boton que abria /stock-general en una
+         pestana nueva. Ahora es una 2da vista de esta misma tabla, elegida
+         con este selector -- asi el usuario nunca pierde de vista los
+         filtros/KPIs, y el tab resaltado deja bien claro cual de las dos
+         esta mirando (ver app.js::cambiarVista). Va antes que los filtros
+         (pedido del usuario, 2026-09-22): primero se elige la vista, recien
+         despues los filtros que le corresponden a esa vista. -->
+    <div class="tabla-toolbar tabla-toolbar-independiente">
+      <div class="vista-tabs" role="tablist" aria-label="Vista de la tabla de stock">
+        <button type="button" class="vista-tab vista-tab-activa" data-vista="deposito" role="tab" aria-selected="true">Por depósito</button>
+        <button type="button" class="vista-tab" data-vista="resumen" role="tab" aria-selected="false" title="Una fila por código, una columna por depósito">Resumen por código</button>
+      </div>
+      <div class="tabla-toolbar-acciones" id="acciones-deposito">
+        <label class="check-toggle">
+          <input id="filtro-sin-clasificar" type="checkbox">
+          <span>Solo sin clasificar (<span id="contador-sin-clasificar">0</span>)</span>
+        </label>
+        <button id="btn-exportar-pdf" type="button" class="btn-secundario">
+          <span>Exportar <span id="btn-exportar-pdf-cantidad">0</span> filas a PDF</span>
+        </button>
+        <button id="btn-exportar" type="button" class="btn-primario">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 19h16"/></svg>
+          <span>Exportar <span id="btn-exportar-cantidad">0</span> filas a Excel</span>
+        </button>
+      </div>
+      <div class="tabla-toolbar-acciones" id="acciones-resumen" hidden>
+        <button id="btn-exportar-resumen" type="button" class="btn-primario">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 19h16"/></svg>
+          Exportar a Excel
+        </button>
+      </div>
+    </div>
+
     <div class="barra-filtros">
       <div class="filtro" id="filtro-deposito-wrap">
         <label>Depósito</label>
@@ -118,36 +151,6 @@
     </section>
 
     <div class="tabla-card">
-      <div class="tabla-toolbar">
-        <!-- Antes "Stock general" era un boton que abria /stock-general en
-             una pestana nueva. Ahora es una 2da vista de esta misma tabla,
-             elegida con este selector -- asi el usuario nunca pierde de
-             vista los filtros/KPIs, y el tab resaltado deja bien claro cual
-             de las dos esta mirando (ver app.js::cambiarVista). -->
-        <div class="vista-tabs" role="tablist" aria-label="Vista de la tabla de stock">
-          <button type="button" class="vista-tab vista-tab-activa" data-vista="deposito" role="tab" aria-selected="true">Por depósito</button>
-          <button type="button" class="vista-tab" data-vista="resumen" role="tab" aria-selected="false" title="Una fila por código, una columna por depósito">Resumen por código</button>
-        </div>
-        <div class="tabla-toolbar-acciones" id="acciones-deposito">
-          <label class="check-toggle">
-            <input id="filtro-sin-clasificar" type="checkbox">
-            <span>Solo sin clasificar (<span id="contador-sin-clasificar">0</span>)</span>
-          </label>
-          <button id="btn-exportar-pdf" type="button" class="btn-secundario">
-            <span>Exportar <span id="btn-exportar-pdf-cantidad">0</span> filas a PDF</span>
-          </button>
-          <button id="btn-exportar" type="button" class="btn-primario">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 19h16"/></svg>
-            <span>Exportar <span id="btn-exportar-cantidad">0</span> filas a Excel</span>
-          </button>
-        </div>
-        <div class="tabla-toolbar-acciones" id="acciones-resumen" hidden>
-          <button id="btn-exportar-resumen" type="button" class="btn-primario">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 19h16"/></svg>
-            Exportar a Excel
-          </button>
-        </div>
-      </div>
       <div class="tabla-scroll" id="scroll-deposito">
         <table id="tabla-stock">
           <colgroup>

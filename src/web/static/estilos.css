@@ -479,7 +479,7 @@ body {
   flex-shrink: 0;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 9px;
+  gap: 8px;
 }
 
 .kpi {
@@ -491,7 +491,7 @@ body {
   gap: 2px;
   text-align: left;
   cursor: pointer;
-  padding: 9px 12px 8px;
+  padding: 8px 10px 7px;
   background: var(--superficie);
   border: 1px solid var(--gridline);
   border-radius: var(--radio);
@@ -505,7 +505,7 @@ body {
   content: "";
   position: absolute;
   inset: 0 0 auto 0;
-  height: 3px;
+  height: 2px;
   background: var(--kpi-color);
 }
 
@@ -519,8 +519,8 @@ body {
 .kpi-sobrestock { --kpi-color: var(--estado-sobrestock); --kpi-texto: var(--estado-sobrestock-texto); }
 
 .kpi-etiqueta {
-  margin-top: 3px;
-  font-size: 11px;
+  margin-top: 2px;
+  font-size: 10px;
   font-weight: 600;
 }
 
@@ -529,9 +529,9 @@ body {
 .kpi-critico .kpi-etiqueta::before {
   content: "";
   display: inline-block;
-  width: 7px;
-  height: 7px;
-  margin-right: 6px;
+  width: 6px;
+  height: 6px;
+  margin-right: 5px;
   border-radius: 50%;
   background: var(--estado-critico);
 }
@@ -540,12 +540,12 @@ body {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 6px;
+  gap: 5px;
 }
 
 .kpi-valor {
   font-family: var(--fuente-display);
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 700;
   line-height: 1.05;
   color: var(--kpi-texto);
@@ -553,13 +553,13 @@ body {
 }
 
 .kpi-cta {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   color: var(--acento);
   white-space: nowrap;
 }
 
-.kpi-detalle { font-size: 11px; }
+.kpi-detalle { font-size: 10px; }
 
 @media (prefers-reduced-motion: no-preference) {
   .kpi {
@@ -687,6 +687,20 @@ body {
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
+}
+
+/* En el dashboard principal esta barra ya no vive pegada arriba de la
+   tabla (dentro de .tabla-card): quedo suelta, arriba de los filtros
+   (pedido del usuario, 2026-09-22, "invertir" el orden de las dos
+   barras). Necesita su propio marco -- mismo look que .barra-filtros --
+   en vez del border-bottom que la separaba de la tabla cuando estaba
+   adentro. La pagina /stock-general (standalone, legacy) sigue usando
+   .tabla-toolbar tal cual, adentro de su .tabla-card. */
+.tabla-toolbar-independiente {
+  border-bottom: none;
+  background: var(--superficie);
+  border: 1px solid var(--gridline);
+  border-radius: var(--radio);
 }
 
 .tabla-toolbar-titulo {
