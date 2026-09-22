@@ -227,84 +227,45 @@ body {
   background: #4A63D6;
 }
 
-.encabezado-fila-vista-filtros {
-  display: flex;
-  align-items: flex-end;
-  gap: 9px;
-  flex-wrap: wrap;
-}
+/* Fila de acciones (exportar/"solo sin clasificar"): pedido del usuario,
+   2026-09-23 -- se invierte con el bloque de vista+filtros (que se mudo a
+   <main>, pegado arriba de los encabezados de columna); estas acciones
+   pasan a ocupar el lugar que dejo libre, adentro del encabezado azul. */
+.encabezado-fila-acciones { display: flex; }
 
-/* Selector de vista dentro del encabezado: las dos opciones llevan pildora
-   de color solido (activa = --color-ink, inactiva = --color-brand-dark) --
-   a diferencia del resto de la app, aca la inactiva nunca queda
-   transparente porque flota sobre el fondo azul, no sobre blanco. */
-.encabezado-tarjeta .vista-tabs {
-  background: none;
-  border: none;
-  padding: 0;
-  gap: 5px;
-}
+.encabezado-tarjeta .check-toggle { color: #C9D3F5; font-size: 10px; }
+.encabezado-tarjeta .check-toggle input { accent-color: var(--color-ink); }
 
-.encabezado-tarjeta .vista-tab {
-  background: var(--color-brand-dark);
-  color: #fff;
-  padding: 7px 13px;
-  font-size: 10px;
-  font-family: "Inter", var(--fuente-cuerpo), sans-serif;
-  transition: background-color 160ms ease, transform 160ms ease;
-}
-
-.encabezado-tarjeta .vista-tab:hover { color: #fff; transform: translateY(-1px); }
-.encabezado-tarjeta .vista-tab.vista-tab-activa { background: var(--color-ink); }
-.encabezado-tarjeta .vista-tab.vista-tab-activa:hover { transform: none; }
-
-.encabezado-tarjeta .barra-filtros {
-  flex: 1;
-  background: none;
-  border: none;
-  padding: 0;
-  gap: 9px;
-  align-items: flex-end;
-}
-
-.encabezado-tarjeta .filtro > label {
-  color: #C9D3F5;
-  font-family: "Inter", var(--fuente-cuerpo), sans-serif;
-}
-
-.encabezado-tarjeta .filtro input[type="text"],
-.encabezado-tarjeta .multiselect-boton {
+.encabezado-tarjeta .btn-primario,
+.encabezado-tarjeta .btn-secundario {
   height: auto;
-  padding: 9px 17px;
-  border: none;
-  border-radius: 100px;
+  padding: 7px 14px;
   font-size: 10px;
-  font-family: "Inter", var(--fuente-cuerpo), sans-serif;
-  color: var(--color-ink);
-  transition: background-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+  border-radius: 100px;
+  transition: background-color 160ms ease, border-color 160ms ease, transform 160ms ease;
 }
 
-/* background-color (no "background"): .multiselect-boton ya trae la
-   flecha como background-image en la regla base -- una nueva declaracion
-   de "background-color" cambia solo el color y deja la imagen intacta. */
-.encabezado-tarjeta .filtro input[type="text"],
-.encabezado-tarjeta .multiselect-boton { background-color: var(--color-surface); }
+.encabezado-tarjeta .btn-primario {
+  background: var(--color-brand-dark);
+  border-color: var(--color-brand-dark);
+}
 
-.encabezado-tarjeta .multiselect-boton { padding-right: 27px; }
-
-.encabezado-tarjeta .filtro input[type="text"]::placeholder { color: var(--color-text-muted); }
-
-.encabezado-tarjeta .filtro input[type="text"]:hover,
-.encabezado-tarjeta .multiselect-boton:hover {
-  border-color: transparent;
+.encabezado-tarjeta .btn-primario:hover {
+  background: var(--color-ink);
+  border-color: var(--color-ink);
   transform: translateY(-1px);
-  box-shadow: var(--sombra-flotante);
 }
 
-.encabezado-tarjeta .filtro input[type="text"]:focus,
-.encabezado-tarjeta .multiselect-boton:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.55);
+.encabezado-tarjeta .btn-secundario {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  color: #fff;
+}
+
+.encabezado-tarjeta .btn-secundario:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.8);
+  transform: translateY(-1px);
 }
 
 /* ---------- Barra superior (legacy, /stock-general standalone) ---------- */
@@ -896,23 +857,6 @@ body {
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
-}
-
-/* En el dashboard principal esta barra ya no vive pegada arriba de la
-   tabla (dentro de .tabla-card): quedo suelta (pedido del usuario,
-   2026-09-22). Necesita su propio marco -- mismo look que .barra-filtros --
-   en vez del border-bottom que la separaba de la tabla cuando estaba
-   adentro. La pagina /stock-general (standalone, legacy) sigue usando
-   .tabla-toolbar tal cual, adentro de su .tabla-card.
-   El selector de vista se mudo al encabezado (rediseño 2026-09-23), pero
-   la alineacion de esta barra se dejo como estaba antes de ese rediseño
-   (pedido del usuario, 2026-09-23: el cambio debia ser solo estetico, sin
-   reacomodar donde cae cada bloque). */
-.tabla-toolbar-independiente {
-  border-bottom: none;
-  background: var(--superficie);
-  border: 1px solid var(--gridline);
-  border-radius: var(--radio);
 }
 
 .tabla-toolbar-titulo {

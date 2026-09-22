@@ -46,59 +46,29 @@
 
     <div class="encabezado-separador"></div>
 
-    <div class="encabezado-fila-vista-filtros">
-      <!-- El selector de vista se mudo aca adentro del encabezado (antes
-           era su propia barra suelta arriba de los filtros). app.js no
-           cambia: sigue buscando estos mismos elementos por id/clase. -->
-      <div class="vista-tabs" role="tablist" aria-label="Vista de la tabla de stock">
-        <button type="button" class="vista-tab vista-tab-activa" data-vista="deposito" role="tab" aria-selected="true">Por depósito</button>
-        <button type="button" class="vista-tab" data-vista="resumen" role="tab" aria-selected="false" title="Una fila por código, una columna por depósito">Resumen por código</button>
+    <!-- Pedido del usuario, 2026-09-23: se invierte con el bloque de
+         vista+filtros (que ahora vive en <main>, pegado arriba de los
+         encabezados de columna). Este bloque de acciones pasa a ocupar el
+         lugar que dejo libre, adentro del encabezado azul. -->
+    <div class="encabezado-fila-acciones">
+      <div class="tabla-toolbar-acciones" id="acciones-deposito">
+        <label class="check-toggle">
+          <input id="filtro-sin-clasificar" type="checkbox">
+          <span>Solo sin clasificar (<span id="contador-sin-clasificar">0</span>)</span>
+        </label>
+        <button id="btn-exportar-pdf" type="button" class="btn-secundario">
+          <span>Exportar <span id="btn-exportar-pdf-cantidad">0</span> filas a PDF</span>
+        </button>
+        <button id="btn-exportar" type="button" class="btn-primario">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 19h16"/></svg>
+          <span>Exportar <span id="btn-exportar-cantidad">0</span> filas a Excel</span>
+        </button>
       </div>
-
-      <div class="barra-filtros">
-        <div class="filtro" id="filtro-deposito-wrap">
-          <label>Depósito</label>
-          <div class="multiselect" id="multiselect-deposito">
-            <button type="button" class="multiselect-boton">Todos</button>
-            <div class="multiselect-panel" hidden>
-              <div class="multiselect-acciones">
-                <button type="button" data-accion="todos">Marcar todos</button>
-                <button type="button" data-accion="ninguno">Desmarcar todos</button>
-              </div>
-              <div class="multiselect-opciones"></div>
-            </div>
-          </div>
-        </div>
-        <div class="filtro" id="filtro-cluster-wrap">
-          <label>Clúster</label>
-          <div class="multiselect" id="multiselect-cluster">
-            <button type="button" class="multiselect-boton">Todos</button>
-            <div class="multiselect-panel" hidden>
-              <div class="multiselect-acciones">
-                <button type="button" data-accion="todos">Marcar todos</button>
-                <button type="button" data-accion="ninguno">Desmarcar todos</button>
-              </div>
-              <div class="multiselect-opciones"></div>
-            </div>
-          </div>
-        </div>
-        <div class="filtro filtro-buscador">
-          <label for="filtro-buscador">Buscar por código o descripción</label>
-          <input id="filtro-buscador" type="text" placeholder="Ej.: 100234 o gaseosa cola">
-        </div>
-        <div class="filtro" id="filtro-columnas-wrap">
-          <label>Columnas</label>
-          <div class="multiselect" id="multiselect-columnas">
-            <button type="button" class="multiselect-boton">Todas</button>
-            <div class="multiselect-panel" hidden>
-              <div class="multiselect-acciones">
-                <button type="button" data-accion="todos">Marcar todos</button>
-                <button type="button" data-accion="ninguno">Desmarcar todos</button>
-              </div>
-              <div class="multiselect-opciones"></div>
-            </div>
-          </div>
-        </div>
+      <div class="tabla-toolbar-acciones" id="acciones-resumen" hidden>
+        <button id="btn-exportar-resumen" type="button" class="btn-primario">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 19h16"/></svg>
+          Exportar a Excel
+        </button>
       </div>
     </div>
   </header>
@@ -140,32 +110,61 @@
       </div>
     </section>
 
-    <!-- Solo las acciones de la tabla (exportar/"solo sin clasificar");
-         el selector de vista y los filtros viven en el encabezado desde
-         el rediseño (ver rediseno-encabezado-unificador-stock_1.md). -->
-    <div class="tabla-toolbar tabla-toolbar-independiente">
-      <div class="tabla-toolbar-acciones" id="acciones-deposito">
-        <label class="check-toggle">
-          <input id="filtro-sin-clasificar" type="checkbox">
-          <span>Solo sin clasificar (<span id="contador-sin-clasificar">0</span>)</span>
-        </label>
-        <button id="btn-exportar-pdf" type="button" class="btn-secundario">
-          <span>Exportar <span id="btn-exportar-pdf-cantidad">0</span> filas a PDF</span>
-        </button>
-        <button id="btn-exportar" type="button" class="btn-primario">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 19h16"/></svg>
-          <span>Exportar <span id="btn-exportar-cantidad">0</span> filas a Excel</span>
-        </button>
+    <div class="filtros-activos" id="filtros-activos"></div>
+
+    <!-- Vista + filtros: pedido del usuario, 2026-09-23, deben quedar
+         pegados justo arriba de los encabezados de columna (antes vivian
+         adentro del encabezado azul; el bloque de acciones que estaba aca
+         se mudo para alla, ver <header>). -->
+    <div class="barra-filtros">
+      <div class="vista-tabs" role="tablist" aria-label="Vista de la tabla de stock">
+        <button type="button" class="vista-tab vista-tab-activa" data-vista="deposito" role="tab" aria-selected="true">Por depósito</button>
+        <button type="button" class="vista-tab" data-vista="resumen" role="tab" aria-selected="false" title="Una fila por código, una columna por depósito">Resumen por código</button>
       </div>
-      <div class="tabla-toolbar-acciones" id="acciones-resumen" hidden>
-        <button id="btn-exportar-resumen" type="button" class="btn-primario">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 19h16"/></svg>
-          Exportar a Excel
-        </button>
+      <div class="filtro" id="filtro-deposito-wrap">
+        <label>Depósito</label>
+        <div class="multiselect" id="multiselect-deposito">
+          <button type="button" class="multiselect-boton">Todos</button>
+          <div class="multiselect-panel" hidden>
+            <div class="multiselect-acciones">
+              <button type="button" data-accion="todos">Marcar todos</button>
+              <button type="button" data-accion="ninguno">Desmarcar todos</button>
+            </div>
+            <div class="multiselect-opciones"></div>
+          </div>
+        </div>
+      </div>
+      <div class="filtro" id="filtro-cluster-wrap">
+        <label>Clúster</label>
+        <div class="multiselect" id="multiselect-cluster">
+          <button type="button" class="multiselect-boton">Todos</button>
+          <div class="multiselect-panel" hidden>
+            <div class="multiselect-acciones">
+              <button type="button" data-accion="todos">Marcar todos</button>
+              <button type="button" data-accion="ninguno">Desmarcar todos</button>
+            </div>
+            <div class="multiselect-opciones"></div>
+          </div>
+        </div>
+      </div>
+      <div class="filtro filtro-buscador">
+        <label for="filtro-buscador">Buscar por código o descripción</label>
+        <input id="filtro-buscador" type="text" placeholder="Ej.: 100234 o gaseosa cola">
+      </div>
+      <div class="filtro" id="filtro-columnas-wrap">
+        <label>Columnas</label>
+        <div class="multiselect" id="multiselect-columnas">
+          <button type="button" class="multiselect-boton">Todas</button>
+          <div class="multiselect-panel" hidden>
+            <div class="multiselect-acciones">
+              <button type="button" data-accion="todos">Marcar todos</button>
+              <button type="button" data-accion="ninguno">Desmarcar todos</button>
+            </div>
+            <div class="multiselect-opciones"></div>
+          </div>
+        </div>
       </div>
     </div>
-
-    <div class="filtros-activos" id="filtros-activos"></div>
 
     <div class="tabla-card">
       <div class="tabla-scroll" id="scroll-deposito">
