@@ -114,13 +114,13 @@ body {
   --color-alert: #E0932C;
 
   flex-shrink: 0;
-  margin: 11px 24px 0;
+  margin: 9px 24px 0;
   background: var(--color-brand);
-  border-radius: 22px;
-  padding: 25px 31px;
+  border-radius: 19px;
+  padding: 21px 26px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 17px;
   color: #fff;
 }
 
@@ -128,13 +128,13 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 17px;
+  gap: 14px;
   flex-wrap: wrap;
 }
 
-.encabezado-tarjeta .marca { gap: 10px; }
+.encabezado-tarjeta .marca { gap: 8px; }
 
-.encabezado-tarjeta .marca-icono { height: 22px; }
+.encabezado-tarjeta .marca-icono { height: 19px; }
 
 .encabezado-tarjeta .marca-texto {
   flex-direction: column;
@@ -144,7 +144,7 @@ body {
 
 .encabezado-tarjeta .marca-texto h1 {
   font-family: "Poppins", var(--fuente-display), sans-serif;
-  font-size: 22px;
+  font-size: 19px;
   font-weight: 700;
   color: #fff;
   letter-spacing: -0.3px;
@@ -152,7 +152,7 @@ body {
 
 .encabezado-subtitulo {
   font-family: "Inter", var(--fuente-cuerpo), sans-serif;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 400;
   color: #C9D3F5;
 }
@@ -160,7 +160,7 @@ body {
 .encabezado-chips {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 9px;
   flex-wrap: wrap;
   font-family: "Inter", var(--fuente-cuerpo), sans-serif;
 }
@@ -168,9 +168,9 @@ body {
 .chip-actualizado {
   background: var(--color-brand-dark);
   border-radius: 100px;
-  padding: 8px 17px;
+  padding: 7px 14px;
   color: #fff;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -188,8 +188,8 @@ body {
 
 .encabezado-ventana-ventas {
   color: #C9D3F5;
-  font-size: 10px;
-  padding-left: 10px;
+  font-size: 9px;
+  padding-left: 9px;
   border-left: 1px solid rgba(255, 255, 255, 0.25);
   cursor: help;
 }
@@ -199,8 +199,8 @@ body {
 .encabezado-tarjeta .avisos summary {
   background: var(--color-alert);
   color: var(--color-ink);
-  padding: 8px 17px;
-  font-size: 11px;
+  padding: 7px 14px;
+  font-size: 10px;
   font-weight: 600;
   transition: background-color 160ms ease, transform 160ms ease;
 }
@@ -211,9 +211,9 @@ body {
   background: var(--color-brand-dark);
   color: #fff;
   border: none;
-  padding: 8px 17px;
+  padding: 7px 14px;
   font-family: inherit;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   transition: background-color 160ms ease, transform 160ms ease;
 }
@@ -230,7 +230,7 @@ body {
 .encabezado-fila-vista-filtros {
   display: flex;
   align-items: flex-end;
-  gap: 11px;
+  gap: 9px;
   flex-wrap: wrap;
 }
 
@@ -242,14 +242,14 @@ body {
   background: none;
   border: none;
   padding: 0;
-  gap: 6px;
+  gap: 5px;
 }
 
 .encabezado-tarjeta .vista-tab {
   background: var(--color-brand-dark);
   color: #fff;
-  padding: 8px 15px;
-  font-size: 11px;
+  padding: 7px 13px;
+  font-size: 10px;
   font-family: "Inter", var(--fuente-cuerpo), sans-serif;
   transition: background-color 160ms ease, transform 160ms ease;
 }
@@ -263,7 +263,7 @@ body {
   background: none;
   border: none;
   padding: 0;
-  gap: 10px;
+  gap: 9px;
   align-items: flex-end;
 }
 
@@ -275,10 +275,10 @@ body {
 .encabezado-tarjeta .filtro input[type="text"],
 .encabezado-tarjeta .multiselect-boton {
   height: auto;
-  padding: 10px 20px;
+  padding: 9px 17px;
   border: none;
   border-radius: 100px;
-  font-size: 12px;
+  font-size: 10px;
   font-family: "Inter", var(--fuente-cuerpo), sans-serif;
   color: var(--color-ink);
   transition: background-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
@@ -290,7 +290,7 @@ body {
 .encabezado-tarjeta .filtro input[type="text"],
 .encabezado-tarjeta .multiselect-boton { background-color: var(--color-surface); }
 
-.encabezado-tarjeta .multiselect-boton { padding-right: 32px; }
+.encabezado-tarjeta .multiselect-boton { padding-right: 27px; }
 
 .encabezado-tarjeta .filtro input[type="text"]::placeholder { color: var(--color-text-muted); }
 
@@ -904,16 +904,15 @@ body {
    en vez del border-bottom que la separaba de la tabla cuando estaba
    adentro. La pagina /stock-general (standalone, legacy) sigue usando
    .tabla-toolbar tal cual, adentro de su .tabla-card.
-   Desde el rediseño del encabezado (2026-09-23) esta barra ya solo trae
-   las acciones de exportar/"solo sin clasificar" -- el selector de vista
-   se mudo al encabezado -- por eso ahora se alinea a la derecha en vez de
-   repartirse "space-between" contra un primer elemento que ya no esta. */
+   El selector de vista se mudo al encabezado (rediseño 2026-09-23), pero
+   la alineacion de esta barra se dejo como estaba antes de ese rediseño
+   (pedido del usuario, 2026-09-23: el cambio debia ser solo estetico, sin
+   reacomodar donde cae cada bloque). */
 .tabla-toolbar-independiente {
   border-bottom: none;
   background: var(--superficie);
   border: 1px solid var(--gridline);
   border-radius: var(--radio);
-  justify-content: flex-end;
 }
 
 .tabla-toolbar-titulo {
