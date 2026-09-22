@@ -56,6 +56,13 @@
 
 * { box-sizing: border-box; }
 
+/* Garantiza que el atributo [hidden] oculte el elemento aunque su propia
+   clase le fije un display (flex/grid): sin esto, un componente con
+   "display: flex" se seguiria viendo pese al hidden (el CSS del autor le
+   gana al del user-agent). Lo necesitan los bloques que se esconden al
+   cambiar de vista (ver .vista-tabs). */
+[hidden] { display: none !important; }
+
 /* La pagina ocupa exactamente la pantalla: barra + filtros + KPI arriba y la
    tabla se estira por el resto, con scroll propio (encabezado fijo). */
 body {
@@ -621,6 +628,42 @@ body {
 }
 
 .check-toggle input { accent-color: var(--acento); width: 15px; height: 15px; }
+
+/* Selector de vista (antes "Stock general" abria /stock-general en otra
+   pestana; ahora esa tabla vive en esta misma ventana y se cambia con este
+   selector -- necesita ser bien visible, no un link mas, para que quede
+   claro en todo momento cual de las dos vistas esta activa). */
+.vista-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--plano-pagina);
+  border: 1px solid var(--gridline);
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.vista-tab {
+  padding: 7px 16px;
+  border: none;
+  border-radius: 999px;
+  background: none;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tinta-secundaria);
+  cursor: pointer;
+  transition: background var(--transicion), color var(--transicion);
+}
+
+.vista-tab:hover { color: var(--tinta-primaria); }
+
+.vista-tab.vista-tab-activa {
+  background: var(--acento);
+  color: #fff;
+}
+
+.vista-tab.vista-tab-activa:hover { color: #fff; }
 
 /* ---------- Tabla ---------- */
 
