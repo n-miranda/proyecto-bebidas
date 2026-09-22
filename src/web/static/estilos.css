@@ -134,7 +134,7 @@ body {
 
 .encabezado-tarjeta .marca { gap: 8px; }
 
-.encabezado-tarjeta .marca-icono { height: 19px; }
+.encabezado-tarjeta .marca-icono { height: 26px; }
 
 .encabezado-tarjeta .marca-texto {
   flex-direction: column;
