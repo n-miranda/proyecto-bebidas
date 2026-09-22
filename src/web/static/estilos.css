@@ -114,13 +114,13 @@ body {
   --color-alert: #E0932C;
 
   flex-shrink: 0;
-  margin: 16px 24px 0;
+  margin: 11px 24px 0;
   background: var(--color-brand);
-  border-radius: 32px;
-  padding: 36px 44px;
+  border-radius: 22px;
+  padding: 25px 31px;
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: 20px;
   color: #fff;
 }
 
@@ -128,9 +128,13 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 24px;
+  gap: 17px;
   flex-wrap: wrap;
 }
+
+.encabezado-tarjeta .marca { gap: 10px; }
+
+.encabezado-tarjeta .marca-icono { height: 22px; }
 
 .encabezado-tarjeta .marca-texto {
   flex-direction: column;
@@ -140,7 +144,7 @@ body {
 
 .encabezado-tarjeta .marca-texto h1 {
   font-family: "Poppins", var(--fuente-display), sans-serif;
-  font-size: 32px;
+  font-size: 22px;
   font-weight: 700;
   color: #fff;
   letter-spacing: -0.3px;
@@ -148,7 +152,7 @@ body {
 
 .encabezado-subtitulo {
   font-family: "Inter", var(--fuente-cuerpo), sans-serif;
-  font-size: 20px;
+  font-size: 14px;
   font-weight: 400;
   color: #C9D3F5;
 }
@@ -156,7 +160,7 @@ body {
 .encabezado-chips {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 10px;
   flex-wrap: wrap;
   font-family: "Inter", var(--fuente-cuerpo), sans-serif;
 }
@@ -164,9 +168,9 @@ body {
 .chip-actualizado {
   background: var(--color-brand-dark);
   border-radius: 100px;
-  padding: 12px 24px;
+  padding: 8px 17px;
   color: #fff;
-  font-size: 14px;
+  font-size: 11px;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -184,8 +188,8 @@ body {
 
 .encabezado-ventana-ventas {
   color: #C9D3F5;
-  font-size: 13px;
-  padding-left: 14px;
+  font-size: 10px;
+  padding-left: 10px;
   border-left: 1px solid rgba(255, 255, 255, 0.25);
   cursor: help;
 }
@@ -195,7 +199,8 @@ body {
 .encabezado-tarjeta .avisos summary {
   background: var(--color-alert);
   color: var(--color-ink);
-  padding: 12px 24px;
+  padding: 8px 17px;
+  font-size: 11px;
   font-weight: 600;
   transition: background-color 160ms ease, transform 160ms ease;
 }
@@ -206,8 +211,9 @@ body {
   background: var(--color-brand-dark);
   color: #fff;
   border: none;
-  padding: 12px 24px;
+  padding: 8px 17px;
   font-family: inherit;
+  font-size: 11px;
   font-weight: 600;
   transition: background-color 160ms ease, transform 160ms ease;
 }
@@ -224,7 +230,7 @@ body {
 .encabezado-fila-vista-filtros {
   display: flex;
   align-items: flex-end;
-  gap: 16px;
+  gap: 11px;
   flex-wrap: wrap;
 }
 
@@ -236,13 +242,14 @@ body {
   background: none;
   border: none;
   padding: 0;
-  gap: 8px;
+  gap: 6px;
 }
 
 .encabezado-tarjeta .vista-tab {
   background: var(--color-brand-dark);
   color: #fff;
-  padding: 12px 22px;
+  padding: 8px 15px;
+  font-size: 11px;
   font-family: "Inter", var(--fuente-cuerpo), sans-serif;
   transition: background-color 160ms ease, transform 160ms ease;
 }
@@ -256,7 +263,7 @@ body {
   background: none;
   border: none;
   padding: 0;
-  gap: 14px;
+  gap: 10px;
   align-items: flex-end;
 }
 
@@ -268,9 +275,10 @@ body {
 .encabezado-tarjeta .filtro input[type="text"],
 .encabezado-tarjeta .multiselect-boton {
   height: auto;
-  padding: 14px 28px;
+  padding: 10px 20px;
   border: none;
   border-radius: 100px;
+  font-size: 12px;
   font-family: "Inter", var(--fuente-cuerpo), sans-serif;
   color: var(--color-ink);
   transition: background-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
@@ -282,7 +290,7 @@ body {
 .encabezado-tarjeta .filtro input[type="text"],
 .encabezado-tarjeta .multiselect-boton { background-color: var(--color-surface); }
 
-.encabezado-tarjeta .multiselect-boton { padding-right: 40px; }
+.encabezado-tarjeta .multiselect-boton { padding-right: 32px; }
 
 .encabezado-tarjeta .filtro input[type="text"]::placeholder { color: var(--color-text-muted); }
 
