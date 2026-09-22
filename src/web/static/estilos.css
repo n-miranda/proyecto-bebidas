@@ -162,6 +162,24 @@ body {
 
 .ventana-ventas:empty { display: none; }
 
+/* Enlace de vuelta al dashboard principal desde Stock general (misma
+   apariencia que el boton "Actualizar datos", pero es un link). */
+.volver-dashboard {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #e4e2da;
+  border: 1px solid #4a4a43;
+  padding: 5px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background var(--transicion), border-color var(--transicion);
+}
+
+.volver-dashboard:hover { background: #33332e; border-color: #5a5a52; }
+
 #btn-actualizar {
   display: flex;
   align-items: center;
@@ -769,6 +787,21 @@ tbody tr.semaforo-amarillo td.col-dias { color: var(--estado-atencion); }
 tbody tr.semaforo-verde td.col-dias { color: var(--estado-bien); }
 tbody tr.semaforo-sobrestock td.col-dias { color: var(--estado-sobrestock-texto); }
 tbody tr.semaforo-neutro td.col-dias { color: var(--estado-neutro-texto); }
+
+/* Stock general: el semaforo de riesgo se pinta por celda (cada deposito
+   de una misma fila puede estar en un estado distinto), no por fila
+   entera como en el dashboard principal. */
+#tabla-stock-general td.stock-riesgo { font-weight: 600; }
+#tabla-stock-general td.stock-riesgo.sg-rojo { color: var(--estado-critico-texto); }
+#tabla-stock-general td.stock-riesgo.sg-amarillo { color: var(--estado-atencion); }
+#tabla-stock-general td.stock-riesgo.sg-verde { color: var(--estado-bien); }
+#tabla-stock-general td.stock-riesgo.sg-sobrestock { color: var(--estado-sobrestock-texto); }
+#tabla-stock-general td.stock-riesgo.sg-neutro { color: var(--estado-neutro-texto); }
+
+/* Encabezado mas grande que los datos, invertido respecto de la tabla
+   principal (pedido del usuario, 2026-09-22). */
+#tabla-stock-general thead th { font-size: 15px; }
+#tabla-stock-general tbody td { font-size: 12px; }
 
 /* Quiebre cubierto: fila critica con transito > 0. Sin esta marca, el
    quiebre es real (no viene nada en camino). */

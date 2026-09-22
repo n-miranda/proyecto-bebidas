@@ -680,7 +680,13 @@
 
   btnExportar.addEventListener("click", exportarCSV);
   btnExportarPdf.addEventListener("click", exportarPDF);
-  btnStockGeneral.addEventListener("click", () => window.open("/stock-general", "_blank"));
+  // Vincula el dashboard principal con Stock general: la busqueda vigente
+  // (codigo o descripcion) viaja como parametro y esa vista la precarga.
+  btnStockGeneral.addEventListener("click", () => {
+    const busqueda = inputBuscador.value.trim();
+    const url = "/stock-general" + (busqueda ? `?q=${encodeURIComponent(busqueda)}` : "");
+    window.open(url, "_blank");
+  });
 
   async function cargarTodo() {
     const [respStock, respMeta] = await Promise.all([

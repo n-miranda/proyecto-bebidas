@@ -15,6 +15,11 @@
   let todasLasFilas = [];
   let depositos = [];
 
+  // Vinculo con el dashboard principal: si llega con ?q= (busqueda que
+  // estaba activa alla), se precarga aca -- ver app.js::btnStockGeneral.
+  const busquedaInicial = new URLSearchParams(window.location.search).get("q");
+  if (busquedaInicial) inputBuscador.value = busquedaInicial;
+
   // Sin orden por defecto (queda por codigo, como llega). Cada clic en un
   // encabezado recorre asc -> desc -> sin orden, igual que la tabla principal.
   let ordenCampo = null;
@@ -39,11 +44,16 @@
       if (!porCodigo.has(art.codigo)) {
         porCodigo.set(art.codigo, {
           codigo: art.codigo, descripcion: art.descripcion, novedad: art.novedad || "",
-          transitoTotal: 0, stockPorDeposito: {},
+          transitoTotal: 0, stockPorDeposito: {}, riesgoPorDeposito: {}, transitoPorDeposito: {},
         });
       }
       const fila = porCodigo.get(art.codigo);
       fila.stockPorDeposito[art.deposito] = art.stock_bultos;
+      // Riesgo y transito propios de este deposito -- para pintar el stock
+      // actual con el mismo semaforo del dashboard principal y mostrar el
+      // transito de ese deposito puntual al apoyar el cursor (ver render()).
+      fila.riesgoPorDeposito[art.deposito] = art.clase_riesgo || "neutro";
+      fila.transitoPorDeposito[art.deposito] = art.transito_bultos || 0;
       // Transito ya viene por (codigo, deposito) -- ver consolidador.py --
       // aca se suma entre depositos porque esta vista es un resumen por
       // codigo, no tiene una columna por deposito para el transito.
@@ -158,11 +168,21 @@
         const clases = [extra, campo === ordenCampo ? "orden-activo" : ""].filter(Boolean).join(" ");
         return clases ? ` class="${clases}"` : "";
       };
+      const celdaStock = (fila, d) => {
+        const activa = `dep:${d}` === ordenCampo;
+        const clases = ["num", "stock-riesgo", `sg-${fila.riesgoPorDeposito[d] || "neutro"}`, activa ? "orden-activo" : ""]
+          .filter(Boolean).join(" ");
+        const transito = fila.transitoPorDeposito[d] || 0;
+        // Sin transito en ese deposito no se agrega title: el tooltip del
+        // navegador no aparece si el atributo no esta presente.
+        const titulo = transito > 0 ? ` title="Tránsito: ${fmtDosDecimales.format(transito)} bultos"` : "";
+        return `<td class="${clases}"${titulo}>${fmtDosDecimales.format(fila.stockPorDeposito[d] ?? 0)}</td>`;
+      };
       cuerpoTabla.innerHTML = filas.map((fila) => `
       <tr>
         <td${act("codigo")}>${fila.codigo}</td>
         <td${act("descripcion")} title="${escaparHtml(fila.descripcion)}">${fila.descripcion}</td>
-        ${depositos.map((d) => `<td${act(`dep:${d}`, "num")}>${fmtDosDecimales.format(fila.stockPorDeposito[d] ?? 0)}</td>`).join("")}
+        ${depositos.map((d) => celdaStock(fila, d)).join("")}
         <td${act("transito", "num")}>${fmtDosDecimales.format(fila.transitoTotal)}</td>
         <td${act("novedad", "novedad-celda")}>${escaparHtml(fila.novedad)}</td>
       </tr>`).join("");
