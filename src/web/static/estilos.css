@@ -98,7 +98,208 @@ body {
   border: 0;
 }
 
-/* ---------- Barra superior ---------- */
+/* ---------- Encabezado (rediseño 2026-09-23, ver
+   rediseno-encabezado-unificador-stock_1.md) ---------- */
+/* Paleta de marca -- solo se usa dentro de .encabezado-tarjeta. El resto
+   de la app sigue con --acento/--tinta-* de la paleta "Tablero de stock":
+   el .md pide un cambio de piel unicamente en el encabezado, no una
+   retematizacion global. La pagina /stock-general (standalone, legacy)
+   sigue con .barra-superior tal cual, sin este rediseño. */
+.encabezado-tarjeta {
+  --color-brand: #2E4FE0;
+  --color-brand-dark: #1B3A9E;
+  --color-ink: #10254D;
+  --color-surface: #FFFFFF;
+  --color-text-muted: #5B6478;
+  --color-alert: #E0932C;
+
+  flex-shrink: 0;
+  margin: 16px 24px 0;
+  background: var(--color-brand);
+  border-radius: 32px;
+  padding: 36px 44px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  color: #fff;
+}
+
+.encabezado-fila-marca {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.encabezado-tarjeta .marca-texto {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.encabezado-tarjeta .marca-texto h1 {
+  font-family: "Poppins", var(--fuente-display), sans-serif;
+  font-size: 32px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.3px;
+}
+
+.encabezado-subtitulo {
+  font-family: "Inter", var(--fuente-cuerpo), sans-serif;
+  font-size: 20px;
+  font-weight: 400;
+  color: #C9D3F5;
+}
+
+.encabezado-chips {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-family: "Inter", var(--fuente-cuerpo), sans-serif;
+}
+
+.chip-actualizado {
+  background: var(--color-brand-dark);
+  border-radius: 100px;
+  padding: 12px 24px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Pulso muy sutil para transmitir que el dato esta vivo (el .md lo deja
+   opcional "si distrae, omitirlo"); respeta prefers-reduced-motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .chip-actualizado { animation: pulso-actualizado 2s ease-in-out infinite; }
+}
+
+@keyframes pulso-actualizado {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.85; }
+}
+
+.encabezado-ventana-ventas {
+  color: #C9D3F5;
+  font-size: 13px;
+  padding-left: 14px;
+  border-left: 1px solid rgba(255, 255, 255, 0.25);
+  cursor: help;
+}
+
+.encabezado-ventana-ventas:empty { display: none; }
+
+.encabezado-tarjeta .avisos summary {
+  background: var(--color-alert);
+  color: var(--color-ink);
+  padding: 12px 24px;
+  font-weight: 600;
+  transition: background-color 160ms ease, transform 160ms ease;
+}
+
+.encabezado-tarjeta .avisos summary:hover { transform: translateY(-1px); }
+
+.encabezado-tarjeta #btn-actualizar {
+  background: var(--color-brand-dark);
+  color: #fff;
+  border: none;
+  padding: 12px 24px;
+  font-family: inherit;
+  font-weight: 600;
+  transition: background-color 160ms ease, transform 160ms ease;
+}
+
+.encabezado-tarjeta #btn-actualizar:hover { background: var(--color-ink); transform: translateY(-1px); }
+.encabezado-tarjeta #btn-actualizar:active { transform: translateY(0) scale(0.97); }
+
+.encabezado-separador {
+  height: 1px;
+  flex-shrink: 0;
+  background: #4A63D6;
+}
+
+.encabezado-fila-vista-filtros {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+/* Selector de vista dentro del encabezado: las dos opciones llevan pildora
+   de color solido (activa = --color-ink, inactiva = --color-brand-dark) --
+   a diferencia del resto de la app, aca la inactiva nunca queda
+   transparente porque flota sobre el fondo azul, no sobre blanco. */
+.encabezado-tarjeta .vista-tabs {
+  background: none;
+  border: none;
+  padding: 0;
+  gap: 8px;
+}
+
+.encabezado-tarjeta .vista-tab {
+  background: var(--color-brand-dark);
+  color: #fff;
+  padding: 12px 22px;
+  font-family: "Inter", var(--fuente-cuerpo), sans-serif;
+  transition: background-color 160ms ease, transform 160ms ease;
+}
+
+.encabezado-tarjeta .vista-tab:hover { color: #fff; transform: translateY(-1px); }
+.encabezado-tarjeta .vista-tab.vista-tab-activa { background: var(--color-ink); }
+.encabezado-tarjeta .vista-tab.vista-tab-activa:hover { transform: none; }
+
+.encabezado-tarjeta .barra-filtros {
+  flex: 1;
+  background: none;
+  border: none;
+  padding: 0;
+  gap: 14px;
+  align-items: flex-end;
+}
+
+.encabezado-tarjeta .filtro > label {
+  color: #C9D3F5;
+  font-family: "Inter", var(--fuente-cuerpo), sans-serif;
+}
+
+.encabezado-tarjeta .filtro input[type="text"],
+.encabezado-tarjeta .multiselect-boton {
+  height: auto;
+  padding: 14px 28px;
+  border: none;
+  border-radius: 100px;
+  font-family: "Inter", var(--fuente-cuerpo), sans-serif;
+  color: var(--color-ink);
+  transition: background-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+
+/* background-color (no "background"): .multiselect-boton ya trae la
+   flecha como background-image en la regla base -- una nueva declaracion
+   de "background-color" cambia solo el color y deja la imagen intacta. */
+.encabezado-tarjeta .filtro input[type="text"],
+.encabezado-tarjeta .multiselect-boton { background-color: var(--color-surface); }
+
+.encabezado-tarjeta .multiselect-boton { padding-right: 40px; }
+
+.encabezado-tarjeta .filtro input[type="text"]::placeholder { color: var(--color-text-muted); }
+
+.encabezado-tarjeta .filtro input[type="text"]:hover,
+.encabezado-tarjeta .multiselect-boton:hover {
+  border-color: transparent;
+  transform: translateY(-1px);
+  box-shadow: var(--sombra-flotante);
+}
+
+.encabezado-tarjeta .filtro input[type="text"]:focus,
+.encabezado-tarjeta .multiselect-boton:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.55);
+}
+
+/* ---------- Barra superior (legacy, /stock-general standalone) ---------- */
 
 .barra-superior {
   height: 56px;
@@ -690,17 +891,21 @@ body {
 }
 
 /* En el dashboard principal esta barra ya no vive pegada arriba de la
-   tabla (dentro de .tabla-card): quedo suelta, arriba de los filtros
-   (pedido del usuario, 2026-09-22, "invertir" el orden de las dos
-   barras). Necesita su propio marco -- mismo look que .barra-filtros --
+   tabla (dentro de .tabla-card): quedo suelta (pedido del usuario,
+   2026-09-22). Necesita su propio marco -- mismo look que .barra-filtros --
    en vez del border-bottom que la separaba de la tabla cuando estaba
    adentro. La pagina /stock-general (standalone, legacy) sigue usando
-   .tabla-toolbar tal cual, adentro de su .tabla-card. */
+   .tabla-toolbar tal cual, adentro de su .tabla-card.
+   Desde el rediseño del encabezado (2026-09-23) esta barra ya solo trae
+   las acciones de exportar/"solo sin clasificar" -- el selector de vista
+   se mudo al encabezado -- por eso ahora se alinea a la derecha en vez de
+   repartirse "space-between" contra un primer elemento que ya no esta. */
 .tabla-toolbar-independiente {
   border-bottom: none;
   background: var(--superficie);
   border: 1px solid var(--gridline);
   border-radius: var(--radio);
+  justify-content: flex-end;
 }
 
 .tabla-toolbar-titulo {
