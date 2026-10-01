@@ -244,16 +244,20 @@ notas internas del proyecto.)
   `logs\actualizar_remoto_AAAAMMDD.log`.
 - `actualizar_remoto_loop.ps1`: variante que **no necesita el Programador de
   tareas** — corre en bucle mientras la sesión de Windows esté abierta,
-  arrancando solo desde la carpeta de Inicio (`shell:startup`). Para cuando no
-  hay certeza de tener permisos de administrador en esa máquina (ver abajo).
+  arrancando solo desde la carpeta de Inicio (`shell:startup`). **Es el camino
+  que aplica acá:** confirmado que no hay permisos de administrador en la
+  máquina remota.
+- `instalar_inicio_automatico.ps1`: crea ese acceso directo de inicio
+  automático solo (sin tener que armarlo a mano) — usa la carpeta de Inicio
+  **del usuario actual**, no la de todos los usuarios, por eso no pide admin.
 
-**Cómo dejarlo andando en la máquina remota** (sin asumir permisos de
+**Cómo dejarlo andando en la máquina remota** (confirmado: sin permisos de
 administrador — ni Python ni git lo requieren si se instalan "para este
 usuario"):
 
 1. Python: instalador de [python.org](https://python.org), **destildar**
-   "Install Python for all users" — así instala en la carpeta del usuario, sin
-   pedir admin.
+   "Install launcher for all users" en la primera pantalla antes de "Install
+   Now" — así instala en la carpeta del usuario, sin pedir admin.
 2. Git para Windows: el instalador oficial también permite instalar sin ser
    administrador (lo hace solo si detecta que no tiene permisos elevados). Si
    da problemas, la alternativa es **PortableGit** (un .zip de la página de
@@ -269,20 +273,23 @@ usuario"):
    configuración de la cuenta de GitHub. Usarlo como contraseña la primera vez
    que se hace `git push`; con `git config credential.helper manager` (viene
    con Git para Windows) queda guardado para las próximas veces.
-6. Programar la actualización, con **dos caminos** según haya permisos de
-   administrador:
-   - **Con admin:** Programador de tareas de Windows → tarea que ejecute
-     `powershell.exe -ExecutionPolicy Bypass -File actualizar_remoto.ps1` cada
-     2-4 horas, marcada "Ejecutar tanto si el usuario inició sesión como si
-     no" (esta opción puntual es la que a veces pide permisos elevados).
-   - **Sin admin / incierto:** usar `actualizar_remoto_loop.ps1` en su lugar —
-     un acceso directo en `shell:startup` que lo deja corriendo en bucle
-     mientras la sesión de Windows siga abierta (ver las instrucciones dentro
-     del propio archivo). No necesita el Programador de tareas ni ningún
-     permiso especial, a costa de necesitar que la sesión quede abierta.
+6. Desde una consola de PowerShell parada en la carpeta del repo, correr una
+   sola vez:
+   ```
+   powershell -ExecutionPolicy Bypass -File instalar_inicio_automatico.ps1
+   ```
+   Eso deja un acceso directo en la carpeta de Inicio que arranca
+   `actualizar_remoto_loop.ps1` solo, cada vez que se inicia sesión en esa
+   máquina. Para probarlo ya mismo sin reiniciar sesión, hacer doble clic en
+   ese acceso directo (queda en `shell:startup`).
 7. Revisar `logs\actualizar_remoto_*.log` en esa máquina después de la primera
    corrida, y confirmar en <https://proyecto-bebidas-rose.vercel.app> que el
    dato efectivamente se actualizó.
+
+> Si más adelante esa máquina (u otra) consigue permisos de administrador,
+> `actualizar_remoto.ps1` se puede programar directamente en el Programador de
+> tareas de Windows en vez de usar el bucle — misma lógica, sin la limitación
+> de necesitar la sesión abierta.
 
 **Qué no cambia:** la web en Vercel sigue siendo la misma foto fija de
 `data\snapshot.json` (sección anterior) — esto solo automatiza *quién* y
@@ -360,9 +367,11 @@ un archivo local ignorado por git, nunca en el repo.
   servidor remoto" más arriba.
 - Identificado el caso real: una carpeta compartida en la red del servidor,
   accesible solo desde una máquina remota por escritorio remoto — es la que
-  tiene que correr la actualización, no cualquier PC con VPN. Se agrega
-  `actualizar_remoto_loop.ps1` como variante sin Programador de tareas, para
-  el caso de no tener permisos de administrador en esa máquina.
+  tiene que correr la actualización, no cualquier PC con VPN. Confirmado que
+  esa máquina **no tiene permisos de administrador**, así que el camino es
+  `actualizar_remoto_loop.ps1` (sin Programador de tareas). Se agrega
+  `instalar_inicio_automatico.ps1` para crear el acceso directo de inicio
+  automático sin tener que armarlo a mano.
 
 **2026-09-23**
 - Rediseño del encabezado (`rediseno-encabezado-unificador-stock_1.md`):
