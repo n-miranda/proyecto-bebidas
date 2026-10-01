@@ -8,6 +8,11 @@ from pathlib import Path
 
 RAIZ_PROYECTO = Path(__file__).resolve().parent.parent
 CONFIG_JSON = RAIZ_PROYECTO / "config" / "config.json"
+# Config propia de esta maquina (rutas UNC de un servidor remoto, etc.):
+# nunca se sube a git (ver .gitignore) -- asi cada maquina puede tener sus
+# propias rutas sin pisar las de las demas en config.json. Se fusiona por
+# clave, no reemplaza la seccion entera: ver config/config.local.example.json.
+CONFIG_LOCAL_JSON = RAIZ_PROYECTO / "config" / "config.local.json"
 
 
 class ConfigError(Exception):
@@ -75,7 +80,21 @@ def _resolver_ruta(valor: str) -> Path:
     return RAIZ_PROYECTO / p
 
 
-def cargar_config(ruta: Path = CONFIG_JSON) -> Config:
+def _fusionar(base: dict, override: dict) -> dict:
+    """Fusiona 'override' sobre 'base' clave por clave (recursivo en los
+    dict anidados), no reemplaza secciones enteras: config.local.json puede
+    pisar solo 'rutas.maestro_productos', por ejemplo, sin tener que repetir
+    el resto de 'rutas'."""
+    resultado = dict(base)
+    for clave, valor in override.items():
+        if isinstance(valor, dict) and isinstance(resultado.get(clave), dict):
+            resultado[clave] = _fusionar(resultado[clave], valor)
+        else:
+            resultado[clave] = valor
+    return resultado
+
+
+def cargar_config(ruta: Path = CONFIG_JSON, ruta_local: Path = CONFIG_LOCAL_JSON) -> Config:
     if not ruta.exists():
         raise ConfigError(
             f"No se encontro el archivo de configuracion: {ruta}. "
@@ -85,6 +104,13 @@ def cargar_config(ruta: Path = CONFIG_JSON) -> Config:
         datos = json.loads(ruta.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
         raise ConfigError(f"El archivo {ruta} tiene un JSON invalido: {exc}") from exc
+
+    if ruta_local.exists():
+        try:
+            overrides = json.loads(ruta_local.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            raise ConfigError(f"El archivo {ruta_local} tiene un JSON invalido: {exc}") from exc
+        datos = _fusionar(datos, overrides)
 
     try:
         r = datos["rutas"]

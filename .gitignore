@@ -16,3 +16,8 @@ venv/
 
 # Vercel
 .vercel/
+
+# Config propia de cada maquina (rutas reales a un servidor remoto, etc.):
+# nunca se sube, cada maquina tiene la suya. Plantilla en
+# config/config.local.example.json (ese si va al repo).
+/config/config.local.json

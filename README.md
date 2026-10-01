@@ -208,13 +208,56 @@ nube** (Vercel no tiene acceso al disco de esta PC): muestra una foto fija de
 - `STOCK\`, `VENTAS\`, `TRANSITO\`, `salida\` y `logs\` **no se suben** al repo
   (`.gitignore`). **El repo es público:** nunca subir los Excel de origen.
 
-### Publicar datos nuevos
+### Publicar datos nuevos (a mano)
 
 1. `python -m src.main` para regenerar `salida\snapshot.json` con los Excel del
    día.
 2. Copiar ese archivo a `data\snapshot.json`.
 3. `git add data\snapshot.json && git commit -m "Actualizar snapshot publicado" && git push`
    — Vercel redespliega solo al detectar el push.
+
+### Automatizar la actualización desde un servidor remoto
+
+Pensado para cuando las bases de Excel viven en un servidor fuera de esta red,
+pero hay una máquina Windows con acceso de red a ese servidor (carpeta
+compartida / unidad mapeada) que puede quedar prendida y correr una tarea
+programada sola.
+
+**Piezas nuevas:**
+
+- `config\config.local.json` (nunca se sube a git — ver `.gitignore`): rutas
+  propias de esa máquina (las UNC del servidor remoto), que pisan solo esas
+  claves de `config\config.json` sin tocar el resto. Plantilla en
+  `config\config.local.example.json`.
+- `src\actualizar_snapshot.py`: genera `salida\snapshot.json` y lo copia a
+  `data\snapshot.json`, igual que `src\main.py`, pero **sin levantar Flask ni
+  abrir el navegador** — pensado para correr y terminar solo, no para quedar
+  escuchando.
+- `actualizar_remoto.ps1` (raíz del proyecto): el script que corre la tarea
+  programada. Llama a `actualizar_snapshot`, y si el snapshot cambió respecto
+  al último commit, hace `git commit` + `git push` él solo. Si no cambió nada,
+  no genera un commit vacío. Deja log en `logs\actualizar_remoto_AAAAMMDD.log`.
+
+**Cómo dejarlo andando en esa máquina:**
+
+1. Clonar este repo ahí y `pip install -r requirements.txt`.
+2. Copiar `config\config.local.example.json` a `config\config.local.json` y
+   completar las rutas UNC reales del servidor.
+3. Configurar `git` con credenciales **propias de esa máquina** para este
+   repo — un token de acceso personal (scope `repo`) o una deploy key con
+   permiso de escritura, nunca las credenciales personales de otra persona —
+   y probar `git push` a mano una vez antes de programar nada.
+4. Programar `actualizar_remoto.ps1` en el Programador de tareas de Windows,
+   con la frecuencia que haga falta (ej. cada 2-4 horas). La tarea debe poder
+   correr sin que nadie esté logueado ("Ejecutar tanto si el usuario inició
+   sesión como si no").
+5. Revisar `logs\actualizar_remoto_*.log` en esa máquina después de la primera
+   corrida programada, y confirmar en <https://proyecto-bebidas-rose.vercel.app>
+   que el dato efectivamente se actualizó.
+
+**Qué no cambia:** la web en Vercel sigue siendo la misma foto fija de
+`data\snapshot.json` (sección anterior) — esto solo automatiza *quién* y
+*cuándo* actualiza esa foto, no cómo la sirve Vercel.
 
 ### Publicar cambios de diseño o de código
 
@@ -274,6 +317,18 @@ un archivo local ignorado por git, nunca en el repo.
   falta mantener el link viejo.
 
 ## Historial de cambios
+
+**2026-10-01**
+- Config por máquina: `config\config.local.json` (gitignored) pisa claves
+  puntuales de `config\config.json` sin tocar el resto — pensado para que una
+  máquina con acceso a un servidor remoto tenga sus propias rutas UNC sin
+  pelearse con el `config.json` de las demás. Plantilla en
+  `config\config.local.example.json`.
+- `src\actualizar_snapshot.py` + `actualizar_remoto.ps1`: generan el snapshot
+  y lo suben a git solos (sin Flask, sin navegador, pensado para una tarea
+  programada desatendida) — primer paso para automatizar la actualización de
+  datos desde un servidor remoto. Ver "Automatizar la actualización desde un
+  servidor remoto" más arriba.
 
 **2026-09-23**
 - Rediseño del encabezado (`rediseno-encabezado-unificador-stock_1.md`):

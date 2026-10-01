@@ -1,0 +1,10 @@
+{
+  "_nota": "Plantilla para config/config.local.json -- copiar este archivo con ese nombre y completar las rutas reales de la maquina donde corra. config.local.json NUNCA se sube a git (ver .gitignore): cada maquina (la de desarrollo, la que corre contra el servidor remoto, etc.) tiene el suyo. Se fusiona sobre config.json clave por clave: solo hace falta poner las rutas que cambian en esta maquina, no hay que repetir todo 'rutas'.",
+  "rutas": {
+    "stock_bebidas_archivo": "\\\\servidor\\compartido\\ruta\\stock_bebidas.xlsx",
+    "ventas_carpeta": "\\\\servidor\\compartido\\ruta\\VENTAS",
+    "transito_carpeta": "\\\\servidor\\compartido\\ruta\\TRANSITO",
+    "supply_pedidos_carpeta": "\\\\servidor\\compartido\\ruta\\Pedidos Posadas",
+    "maestro_productos": "\\\\servidor\\compartido\\ruta\\productos.xlsx"
+  }
+}
