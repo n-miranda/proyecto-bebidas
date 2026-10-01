@@ -218,42 +218,71 @@ nube** (Vercel no tiene acceso al disco de esta PC): muestra una foto fija de
 
 ### Automatizar la actualización desde un servidor remoto
 
-Pensado para cuando las bases de Excel viven en un servidor fuera de esta red,
-pero hay una máquina Windows con acceso de red a ese servidor (carpeta
-compartida / unidad mapeada) que puede quedar prendida y correr una tarea
-programada sola.
+Caso real identificado el 2026-10-01: los Excel de origen van a vivir en un
+servidor fuera de esta red, en una carpeta de red compartida (nombre y rutas
+exactas a confirmar) que **solo se ve desde dentro de esa red** — no por VPN
+desde cualquier PC. El acceso es por escritorio remoto a una máquina que sí
+está dentro de esa red — esa máquina es la que tiene que correr la
+actualización, porque es la única con acceso nativo a la carpeta sin pasar
+por nada más. (Los datos de conexión puntuales — acceso directo .rdp, usuario,
+nombre de la carpeta — quedan fuera de este README público; están en las
+notas internas del proyecto.)
 
 **Piezas nuevas:**
 
 - `config\config.local.json` (nunca se sube a git — ver `.gitignore`): rutas
-  propias de esa máquina (las UNC del servidor remoto), que pisan solo esas
-  claves de `config\config.json` sin tocar el resto. Plantilla en
+  propias de esa máquina (las UNC de la carpeta compartida), que pisan solo
+  esas claves de `config\config.json` sin tocar el resto. Plantilla en
   `config\config.local.example.json`.
 - `src\actualizar_snapshot.py`: genera `salida\snapshot.json` y lo copia a
   `data\snapshot.json`, igual que `src\main.py`, pero **sin levantar Flask ni
   abrir el navegador** — pensado para correr y terminar solo, no para quedar
   escuchando.
-- `actualizar_remoto.ps1` (raíz del proyecto): el script que corre la tarea
-  programada. Llama a `actualizar_snapshot`, y si el snapshot cambió respecto
-  al último commit, hace `git commit` + `git push` él solo. Si no cambió nada,
-  no genera un commit vacío. Deja log en `logs\actualizar_remoto_AAAAMMDD.log`.
+- `actualizar_remoto.ps1` (raíz del proyecto): llama a `actualizar_snapshot`,
+  y si el snapshot cambió respecto al último commit, hace `git commit` +
+  `git push` él solo (sin commits vacíos si no cambió nada). Deja log en
+  `logs\actualizar_remoto_AAAAMMDD.log`.
+- `actualizar_remoto_loop.ps1`: variante que **no necesita el Programador de
+  tareas** — corre en bucle mientras la sesión de Windows esté abierta,
+  arrancando solo desde la carpeta de Inicio (`shell:startup`). Para cuando no
+  hay certeza de tener permisos de administrador en esa máquina (ver abajo).
 
-**Cómo dejarlo andando en esa máquina:**
+**Cómo dejarlo andando en la máquina remota** (sin asumir permisos de
+administrador — ni Python ni git lo requieren si se instalan "para este
+usuario"):
 
-1. Clonar este repo ahí y `pip install -r requirements.txt`.
-2. Copiar `config\config.local.example.json` a `config\config.local.json` y
-   completar las rutas UNC reales del servidor.
-3. Configurar `git` con credenciales **propias de esa máquina** para este
-   repo — un token de acceso personal (scope `repo`) o una deploy key con
-   permiso de escritura, nunca las credenciales personales de otra persona —
-   y probar `git push` a mano una vez antes de programar nada.
-4. Programar `actualizar_remoto.ps1` en el Programador de tareas de Windows,
-   con la frecuencia que haga falta (ej. cada 2-4 horas). La tarea debe poder
-   correr sin que nadie esté logueado ("Ejecutar tanto si el usuario inició
-   sesión como si no").
-5. Revisar `logs\actualizar_remoto_*.log` en esa máquina después de la primera
-   corrida programada, y confirmar en <https://proyecto-bebidas-rose.vercel.app>
-   que el dato efectivamente se actualizó.
+1. Python: instalador de [python.org](https://python.org), **destildar**
+   "Install Python for all users" — así instala en la carpeta del usuario, sin
+   pedir admin.
+2. Git para Windows: el instalador oficial también permite instalar sin ser
+   administrador (lo hace solo si detecta que no tiene permisos elevados). Si
+   da problemas, la alternativa es **PortableGit** (un .zip de la página de
+   releases de Git for Windows, se descomprime y ya tiene `git.exe`, sin
+   instalador).
+3. Clonar este repo ahí y `pip install -r requirements.txt`.
+4. Copiar `config\config.local.example.json` a `config\config.local.json` y
+   completar las rutas reales de la carpeta compartida (pendiente confirmar
+   las rutas exactas).
+5. Crear un **token de acceso personal de GitHub** (scope `repo`, o
+   "fine-grained" limitado a este repo con permiso de contenidos en
+   lectura/escritura) — no hace falta ser administrador de la máquina, es una
+   configuración de la cuenta de GitHub. Usarlo como contraseña la primera vez
+   que se hace `git push`; con `git config credential.helper manager` (viene
+   con Git para Windows) queda guardado para las próximas veces.
+6. Programar la actualización, con **dos caminos** según haya permisos de
+   administrador:
+   - **Con admin:** Programador de tareas de Windows → tarea que ejecute
+     `powershell.exe -ExecutionPolicy Bypass -File actualizar_remoto.ps1` cada
+     2-4 horas, marcada "Ejecutar tanto si el usuario inició sesión como si
+     no" (esta opción puntual es la que a veces pide permisos elevados).
+   - **Sin admin / incierto:** usar `actualizar_remoto_loop.ps1` en su lugar —
+     un acceso directo en `shell:startup` que lo deja corriendo en bucle
+     mientras la sesión de Windows siga abierta (ver las instrucciones dentro
+     del propio archivo). No necesita el Programador de tareas ni ningún
+     permiso especial, a costa de necesitar que la sesión quede abierta.
+7. Revisar `logs\actualizar_remoto_*.log` en esa máquina después de la primera
+   corrida, y confirmar en <https://proyecto-bebidas-rose.vercel.app> que el
+   dato efectivamente se actualizó.
 
 **Qué no cambia:** la web en Vercel sigue siendo la misma foto fija de
 `data\snapshot.json` (sección anterior) — esto solo automatiza *quién* y
@@ -329,6 +358,11 @@ un archivo local ignorado por git, nunca en el repo.
   programada desatendida) — primer paso para automatizar la actualización de
   datos desde un servidor remoto. Ver "Automatizar la actualización desde un
   servidor remoto" más arriba.
+- Identificado el caso real: una carpeta compartida en la red del servidor,
+  accesible solo desde una máquina remota por escritorio remoto — es la que
+  tiene que correr la actualización, no cualquier PC con VPN. Se agrega
+  `actualizar_remoto_loop.ps1` como variante sin Programador de tareas, para
+  el caso de no tener permisos de administrador en esa máquina.
 
 **2026-09-23**
 - Rediseño del encabezado (`rediseno-encabezado-unificador-stock_1.md`):
