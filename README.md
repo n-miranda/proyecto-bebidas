@@ -55,6 +55,12 @@ web (chip **"N avisos"**):
   agregan artículos huérfanos de ventas o tránsito.
 - Paraná y Victoria tienen poco o nada de tránsito cargado (falta el archivo
   de pedidos de Total Litoral S.A. en la carpeta Drive).
+- **El nombre del archivo de stock cambia todos los días** (`Stock Grupo
+  <fecha>.xlsx`): la app no asume un nombre fijo, busca el más reciente por
+  fecha de modificación dentro de la carpeta `Tablero`. Si ese archivo no es
+  de hoy (nadie subió uno nuevo, o la fecha del nombre no coincide con la
+  fecha real de modificación — ya pasó una vez), aparece un aviso explícito
+  en el chip de la web en vez de mostrar el dato viejo sin avisar.
 
 ## La web
 
@@ -379,6 +385,12 @@ un archivo local ignorado por git, nunca en el repo.
   por artículo.
 - Publicado en Vercel: `public/` actualizado vía merge de 3 vías desde
   `src/web/`, `data/snapshot.json` republicado.
+- **Aviso de archivo de stock desactualizado:** si el "Stock Grupo*.xlsx" más
+  reciente de la carpeta Drive no es de hoy (por fecha de modificación, no
+  por el nombre), aparece un aviso visible en la web en vez de mostrar el
+  dato viejo en silencio. Detectado en la práctica: el archivo
+  `Stock Grupo 14-10-26.xlsx` tenía fecha de modificación 13/10 — el nombre
+  por sí solo no garantiza que el dato sea del día que dice.
 
 **2026-10-01**
 - Config por máquina: `config\config.local.json` (gitignored) pisa claves

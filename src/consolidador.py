@@ -65,7 +65,14 @@ def consolidar(config: Config, fecha_referencia: date | None = None) -> Resultad
     )
     logger.info("Ventana de %d dias de venta: %s", len(dias_venta), [d.isoformat() for d in dias_venta])
 
-    stock_df = ExcelStock(config.rutas.stock_bebidas_archivo).leer()
+    fuente_stock = ExcelStock(config.rutas.stock_bebidas_archivo)
+    stock_df = fuente_stock.leer()
+    if fuente_stock.fecha_archivo_usado and fuente_stock.fecha_archivo_usado != fecha_referencia:
+        avisos.append(
+            f"El archivo de stock usado ({fuente_stock.archivo_usado.name}) es del "
+            f"{fuente_stock.fecha_archivo_usado.strftime('%d/%m/%Y')}, no de hoy: puede que "
+            "todavia no se haya subido un 'Stock Grupo' nuevo a la carpeta Tablero."
+        )
 
     try:
         maestro_df = ExcelMaestroProductos(

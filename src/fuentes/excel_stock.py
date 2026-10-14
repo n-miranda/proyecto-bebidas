@@ -38,6 +38,7 @@ CLAUDE.md 4.1) y se registra en el log cual se uso.
 from __future__ import annotations
 
 import logging
+from datetime import date
 from pathlib import Path
 
 import openpyxl
@@ -113,11 +114,20 @@ def _detectar_depositos(encabezados: tuple) -> list[tuple[str, int, int, int]]:
 class ExcelStock(FuenteStock):
     def __init__(self, archivo: Path):
         self.archivo = archivo
+        # Se completa en leer(): que archivo se termino usando (el nombre
+        # cambia dia a dia, ver _resolver_archivo) y su fecha de
+        # modificacion, para que el consolidador pueda avisar si el stock
+        # mostrado no es de hoy (a pedido del usuario, 2026-10-14: nadie
+        # garantiza que se suba un 'Stock Grupo' nuevo todos los dias).
+        self.archivo_usado: Path | None = None
+        self.fecha_archivo_usado: date | None = None
 
     def leer(self) -> pd.DataFrame:
         archivo = _resolver_archivo(self.archivo)
         if not archivo.exists():
             raise FileNotFoundError(f"No se encontro el archivo de stock: {archivo}")
+        self.archivo_usado = archivo
+        self.fecha_archivo_usado = date.fromtimestamp(archivo.stat().st_mtime)
         wb = openpyxl.load_workbook(archivo, data_only=True, read_only=True)
         nombre_hoja = next((h for h in wb.sheetnames if h.strip().upper() == NOMBRE_HOJA), None)
         if nombre_hoja is None:
