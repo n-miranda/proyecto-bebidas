@@ -34,7 +34,7 @@ from src.fuentes.excel_ventas import ExcelVentas
 logger = logging.getLogger(__name__)
 
 COLUMNAS_CANONICAS = [
-    "codigo", "descripcion", "deposito", "proveedor", "rubro", "unidades_por_bulto",
+    "codigo", "descripcion", "deposito", "cluster", "grupo", "proveedor", "rubro", "unidades_por_bulto",
     "stock_unidades", "stock_bultos", "venta_unidades_7d",
     "venta_promedio_bulto", "dias_stock",
     "transito_bultos", "dias_stock_c_transito", "dias_venta_usados",
@@ -93,7 +93,12 @@ def consolidar(config: Config, fecha_referencia: date | None = None) -> Resultad
     inconsistencias_transito = fuente_transito.inconsistencias()
 
     novedades_df = ExcelNovedades(config.rutas.transito_carpeta / config.rutas.novedades_archivo).leer()
-    pedidos_deposito_df = TransitoPedidosDeposito(config.rutas.transito_carpeta).leer()
+    # Pedidos pendientes por empresa (1994, Total Center, Kera Guazu...), no
+    # por deposito: viven en la misma carpeta de Drive que el stock (ver
+    # excel_pedidos_deposito.py, 2026-10-14) -- reemplaza la carpeta local
+    # TRANSITO\<OB/SV/PR/TC> - Pedidos.xlsx, con codigos de deposito que ya
+    # no existen.
+    pedidos_deposito_df = TransitoPedidosDeposito(config.rutas.stock_bebidas_archivo).leer()
 
     ventas_ventana = ventas_df[ventas_df["fecha"].isin(dias_venta)] if not ventas_df.empty else ventas_df
     ventas_agg = (
@@ -143,7 +148,7 @@ def consolidar(config: Config, fecha_referencia: date | None = None) -> Resultad
         avisos.append(
             f"{codigos_en_mas_de_un_deposito} articulos tienen stock en mas de un deposito: "
             "aparecen en una fila por deposito, cada una con su propio stock, venta promedio "
-            "bulto y transito de pedidos (TRANSITO\\<DEPOSITO> - Pedidos.xlsx). 'Venta 7d' es la "
+            "bulto y transito de pedidos (Pedidos por empresa de la carpeta Tablero). 'Venta 7d' es la "
             "excepcion: usa el TOTAL del articulo, no discrimina por deposito (VENTAS.xlsx no lo trae)."
         )
 
@@ -158,7 +163,7 @@ def consolidar(config: Config, fecha_referencia: date | None = None) -> Resultad
                 ", ".join(sorted(excluidos)), cantidad_excluida,
             )
 
-    df["stock_unidades"] = df["stock_unidades"].fillna(0.0)
+    df["stock_bultos"] = df["stock_bultos"].fillna(0.0)
     df["venta_unidades_7d"] = df["venta_unidades_7d"].fillna(0.0)
     df["transito_unidades"] = df["transito_unidades"].fillna(0.0)
     df["transito_bultos_pedidos"] = df["transito_bultos_pedidos"].fillna(0.0)
@@ -171,6 +176,17 @@ def consolidar(config: Config, fecha_referencia: date | None = None) -> Resultad
     # la Series directo desde una lista de Python con dtype=object.
     df["novedad"] = pd.Series(
         [v if pd.notna(v) else None for v in df["novedad"]],
+        index=df.index, dtype=object,
+    )
+    # cluster (ABC de STOCK, ver excel_stock.py): mismo patron que novedad --
+    # sin cluster cargado para ese (codigo, deposito) debe ser null, no NaN.
+    df["cluster"] = pd.Series(
+        [v if pd.notna(v) else None for v in df["cluster"]],
+        index=df.index, dtype=object,
+    )
+    # grupo (columna 'Retiro' de STOCK, ver excel_stock.py): mismo patron.
+    df["grupo"] = pd.Series(
+        [v if pd.notna(v) else None for v in df["grupo"]],
         index=df.index, dtype=object,
     )
     df["sin_clasificar"] = False
@@ -198,9 +214,12 @@ def consolidar(config: Config, fecha_referencia: date | None = None) -> Resultad
                 "motivo": "; ".join(motivos),
             })
 
-    df["stock_bultos"] = df.apply(
-        lambda r: convertir_a_bultos(r["stock_unidades"], r["unidades_por_bulto"]), axis=1
-    )
+    # stock_bultos viene directo de ExcelStock (pestaña 'Stock' de Stock
+    # Grupo, columna '<Deposito> Disponible'), ya en bultos -- a diferencia
+    # de la fuente anterior, no se divide por unidades_por_bulto. stock_unidades
+    # queda solo como dato informativo (se multiplica para no perder la
+    # relacion, aunque dias_stock/riesgo usan siempre stock_bultos).
+    df["stock_unidades"] = df["stock_bultos"] * df["unidades_por_bulto"]
     df["transito_bultos"] = df.apply(
         lambda r: convertir_a_bultos(r["transito_unidades"], r["unidades_por_bulto"]), axis=1
     ) + df["transito_bultos_pedidos"]

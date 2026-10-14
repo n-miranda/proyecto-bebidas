@@ -9,6 +9,8 @@
     { campo: "codigo", etiqueta: "Código" },
     { campo: "descripcion", etiqueta: "Descripción" },
     { campo: "deposito", etiqueta: "Depósito" },
+    { campo: "grupo", etiqueta: "Grupo" },
+    { campo: "cluster", etiqueta: "Clúster" },
     { campo: "stock_bultos", etiqueta: "Stock (bultos)", num: true },
     { campo: "venta_promedio_bulto", etiqueta: "Venta prom. (bultos)", num: true },
     { campo: "dias_stock", etiqueta: "Días de stock", num: true },
@@ -24,7 +26,7 @@
   let ordenCampo = null;
   let ordenAscendente = true;
 
-  const CAMPOS_TEXTO = new Set(["descripcion", "deposito"]);
+  const CAMPOS_TEXTO = new Set(["descripcion", "deposito", "grupo", "cluster"]);
 
   const cuerpoTabla = document.getElementById("cuerpo-tabla");
   const fechaActualizacionEl = document.getElementById("fecha-actualizacion");
@@ -67,6 +69,7 @@
   const accionesDeposito = document.getElementById("acciones-deposito");
   const accionesResumen = document.getElementById("acciones-resumen");
   const filtroDepositoWrap = document.getElementById("filtro-deposito-wrap");
+  const filtroGrupoWrap = document.getElementById("filtro-grupo-wrap");
   const filtroClusterWrap = document.getElementById("filtro-cluster-wrap");
   const filtroColumnasWrap = document.getElementById("filtro-columnas-wrap");
   const kpisEl = document.getElementById("kpis");
@@ -178,6 +181,7 @@
   });
 
   const multiDeposito = crearMultiSelect("multiselect-deposito", () => render());
+  const multiGrupo = crearMultiSelect("multiselect-grupo", () => render());
   const multiCluster = crearMultiSelect("multiselect-cluster", () => render());
 
   // Selector de columnas visibles (pedido del usuario, 2026-09-18). Solo
@@ -405,6 +409,7 @@
     accionesDeposito.hidden = esResumen;
     accionesResumen.hidden = !esResumen;
     filtroDepositoWrap.hidden = esResumen;
+    filtroGrupoWrap.hidden = esResumen;
     filtroClusterWrap.hidden = esResumen;
     filtroColumnasWrap.hidden = esResumen;
     kpisEl.hidden = esResumen;
@@ -459,6 +464,12 @@
         return formatearDiasStock(art.dias_stock, art.stock_bultos);
       case "dias_stock_c_transito":
         return formatearDiasStock(art.dias_stock_c_transito, art.stock_bultos + art.transito_bultos);
+      case "cluster":
+        // Sin ABC cargado para ese (codigo, deposito) en STOCK: "-", no "null".
+        return art.cluster || "—";
+      case "grupo":
+        // Sin Retiro cargado para ese articulo en STOCK: "-", no "null".
+        return art.grupo || "—";
       default:
         return String(art[campo]);
     }
@@ -482,12 +493,21 @@
   function poblarFiltros() {
     const depositos = [...new Set(articulos.map((a) => a.deposito))].sort((a, b) => a.localeCompare(b, "es"));
     multiDeposito.setOpciones(depositos);
-    // Cluster: todavia no hay ese dato cargado en los articulos (pedido del
-    // usuario, 2026-09-17) -- el filtro queda armado pero sin opciones hasta
-    // que exista una fuente real. Ver el "size > 0" en filtrarSinEstado: con
-    // cero opciones el filtro no excluye nada (si no, un Set vacio bloquearia
-    // todas las filas).
-    multiCluster.setOpciones([]);
+    // Grupo = columna 'Retiro' de la pestaña STOCK de "Stock Grupo", un
+    // valor por articulo (no varia por deposito, a diferencia de cluster) --
+    // ver excel_stock.py (agregado 2026-10-14, a pedido del usuario).
+    const grupos = [...new Set(articulos.map((a) => a.grupo).filter(Boolean))]
+      .sort((a, b) => a.localeCompare(b, "es"));
+    multiGrupo.setOpciones(grupos);
+    // Cluster = ABC de la pestaña STOCK de "Stock Grupo", vinculado por
+    // (codigo, deposito) -- ver excel_stock.py (agregado 2026-10-14, a
+    // pedido del usuario). Articulos sin ABC cargado para ese deposito
+    // quedan con cluster=null y no entran en las opciones del filtro; con
+    // cero opciones (archivo sin ABC todavia) el filtro no excluye nada,
+    // ver el "size > 0" en filtrarSinEstado.
+    const clusters = [...new Set(articulos.map((a) => a.cluster).filter(Boolean))]
+      .sort((a, b) => a.localeCompare(b, "es"));
+    multiCluster.setOpciones(clusters);
     contadorSinClasificarEl.textContent = fmtEntero.format(
       articulos.filter((a) => a.sin_clasificar).length
     );
@@ -514,6 +534,7 @@
   // resto de los KPI caerian a 0 y no se podria volver a elegir otro estado).
   function filtrarSinEstado(lista) {
     const depositos = multiDeposito.getSeleccion();
+    const grupos = multiGrupo.getSeleccion();
     const clusters = multiCluster.getSeleccion();
     const busqueda = inputBuscador.value.trim().toLowerCase();
     const soloSinClasificar = checkSinClasificar.checked;
@@ -521,6 +542,7 @@
     return lista.filter((a) => {
       if (soloSinClasificar && !a.sin_clasificar) return false;
       if (!depositos.has(a.deposito)) return false;
+      if (grupos.size > 0 && !grupos.has(a.grupo)) return false;
       if (clusters.size > 0 && !clusters.has(a.cluster)) return false;
       if (busqueda) {
         const enCodigo = a.codigo.toLowerCase().includes(busqueda);
@@ -563,6 +585,12 @@
         texto: `Depósito: ${[...multiDeposito.getSeleccion()].sort((a, b) => a.localeCompare(b, "es")).join(", ") || "ninguno"}`,
       });
     }
+    if (multiGrupo.getOpciones().length > 0 && multiGrupo.getSeleccion().size < multiGrupo.getOpciones().length) {
+      chips.push({
+        id: "grupo",
+        texto: `Grupo: ${[...multiGrupo.getSeleccion()].sort((a, b) => a.localeCompare(b, "es")).join(", ") || "ninguno"}`,
+      });
+    }
     if (multiCluster.getOpciones().length > 0 && multiCluster.getSeleccion().size < multiCluster.getOpciones().length) {
       chips.push({
         id: "cluster",
@@ -594,12 +622,14 @@
     if (!boton) return;
     switch (boton.dataset.quitar) {
       case "deposito": marcarTodos(multiDeposito); break;
+      case "grupo": marcarTodos(multiGrupo); break;
       case "cluster": marcarTodos(multiCluster); break;
       case "busqueda": inputBuscador.value = ""; break;
       case "sin-clasificar": checkSinClasificar.checked = false; break;
       case "estado": filtroEstado = null; break;
       case "todo":
         marcarTodos(multiDeposito);
+        marcarTodos(multiGrupo);
         marcarTodos(multiCluster);
         inputBuscador.value = "";
         checkSinClasificar.checked = false;
@@ -703,7 +733,7 @@
     const filas = listaVisible();
 
     if (filas.length === 0) {
-      cuerpoTabla.innerHTML = '<tr><td colspan="9">No hay artículos que coincidan con los filtros.</td></tr>';
+      cuerpoTabla.innerHTML = '<tr><td colspan="11">No hay artículos que coincidan con los filtros.</td></tr>';
     } else {
       cuerpoTabla.innerHTML = filas.map((art, idx) => {
         const clase = claseSemaforo(art);
@@ -728,6 +758,8 @@
         <td data-campo="codigo"${ordenCampo === "codigo" ? ' class="orden-activo"' : ""}>${art.codigo}</td>
         <td data-campo="descripcion"${ordenCampo === "descripcion" ? ' class="orden-activo"' : ""} title="${escaparHtml(art.descripcion)}">${art.descripcion}${novedad}</td>
         <td data-campo="deposito"${ordenCampo === "deposito" ? ' class="orden-activo"' : ""}>${art.deposito}</td>
+        ${celda("grupo", art)}
+        ${celda("cluster", art)}
         ${celda("stock_bultos", art)}
         ${celda("venta_promedio_bulto", art)}
         ${celda("dias_stock", art, "col-dias")}
@@ -900,6 +932,7 @@
   function resumenFiltrosPDF() {
     const partes = [
       `<strong>Depósito:</strong> ${escaparHtml(etiquetaMultiselectPDF(multiDeposito))}`,
+      `<strong>Grupo:</strong> ${escaparHtml(etiquetaMultiselectPDF(multiGrupo))}`,
       `<strong>Clúster:</strong> ${escaparHtml(etiquetaMultiselectPDF(multiCluster))}`,
     ];
     const busqueda = inputBuscador.value.trim();
@@ -968,6 +1001,6 @@
 
   cargarTodo().catch((err) => {
     mostrarToast("No se pudieron cargar los datos: " + err.message, "error");
-    cuerpoTabla.innerHTML = '<tr><td colspan="9">No se pudieron cargar los artículos.</td></tr>';
+    cuerpoTabla.innerHTML = '<tr><td colspan="11">No se pudieron cargar los artículos.</td></tr>';
   });
 })();

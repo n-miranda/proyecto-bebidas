@@ -131,6 +131,19 @@
           </div>
         </div>
       </div>
+      <div class="filtro" id="filtro-grupo-wrap">
+        <label>Grupo</label>
+        <div class="multiselect" id="multiselect-grupo">
+          <button type="button" class="multiselect-boton">Todos</button>
+          <div class="multiselect-panel" hidden>
+            <div class="multiselect-acciones">
+              <button type="button" data-accion="todos">Marcar todos</button>
+              <button type="button" data-accion="ninguno">Desmarcar todos</button>
+            </div>
+            <div class="multiselect-opciones"></div>
+          </div>
+        </div>
+      </div>
       <div class="filtro" id="filtro-cluster-wrap">
         <label>Clúster</label>
         <div class="multiselect" id="multiselect-cluster">
@@ -169,13 +182,15 @@
           <colgroup>
             <col style="width: 3%">
             <col data-campo="codigo" style="width: 8%">
-            <col data-campo="descripcion" style="width: 32%">
-            <col data-campo="deposito" style="width: 9%">
-            <col data-campo="stock_bultos" style="width: 9%">
-            <col data-campo="venta_promedio_bulto" style="width: 10%">
-            <col data-campo="dias_stock" style="width: 8%">
-            <col data-campo="transito_bultos" style="width: 9%">
-            <col data-campo="dias_stock_c_transito" style="width: 12%">
+            <col data-campo="descripcion" style="width: 27%">
+            <col data-campo="deposito" style="width: 8%">
+            <col data-campo="grupo" style="width: 7%">
+            <col data-campo="cluster" style="width: 6%">
+            <col data-campo="stock_bultos" style="width: 8%">
+            <col data-campo="venta_promedio_bulto" style="width: 9%">
+            <col data-campo="dias_stock" style="width: 7%">
+            <col data-campo="transito_bultos" style="width: 8%">
+            <col data-campo="dias_stock_c_transito" style="width: 9%">
           </colgroup>
           <thead>
             <tr>
@@ -183,6 +198,8 @@
               <th data-campo="codigo">Código</th>
               <th data-campo="descripcion">Descripción</th>
               <th data-campo="deposito">Depósito</th>
+              <th data-campo="grupo">Grupo</th>
+              <th data-campo="cluster">Clúster</th>
               <th data-campo="stock_bultos" class="num">Stock (bultos)</th>
               <th data-campo="venta_promedio_bulto" class="num">Venta prom. (bultos)</th>
               <th data-campo="dias_stock" class="num">Días de stock</th>
@@ -191,7 +208,7 @@
             </tr>
           </thead>
           <tbody id="cuerpo-tabla">
-            <tr><td colspan="9">Cargando artículos...</td></tr>
+            <tr><td colspan="11">Cargando artículos...</td></tr>
           </tbody>
         </table>
       </div>

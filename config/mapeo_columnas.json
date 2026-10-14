@@ -2,29 +2,36 @@
   "_nota": "Por pedido del usuario (2026-09-17), PROYECTO BEBIDAS sigue usando por el momento las mismas bases (stock.xlsx, rubros.xlsx, VENTAS.xlsx, productos.xlsx) que UNIFICADOR_STOCK. Este mapeo es el confirmado contra esos archivos reales — sigue aplicando tal cual. Si en el futuro se reemplazan las bases por fuentes propias de bebidas, hay que rehacer el Paso 0 de Reconocimiento y reescribir este archivo.",
 
   "stock": {
-    "_nota": "Cambio 2026-09-17 (segundo cambio del dia) a pedido del usuario: se reemplazo el export diario de STOCK DIARIO\\STOCK_TRC_P_DD-MM.xlsx (TR2019/TRC2019, Total Refrigerados) por un archivo manual propio de bebidas: D:\\01-Usuario\\Downloads\\stock_bebidas.xlsx. Es la primera fuente de la app con codigos de articulo REALES de bebidas (ej. 7038 BRAHMA, 1413 GATORADE) -- ya no comparte universo de codigos con VENTAS.xlsx/maestro de productos/rubros, que siguen siendo de Total Refrigerados. Por eso, hasta que se reemplacen tambien esas fuentes, todo articulo de bebidas sale 'SIN CLASIFICAR' (sin proveedor/rubro/UxB) y con venta 7d = 0 (sin dato de venta que matchee) -- es esperado, no un bug.",
-    "archivo": "D:\\01-Usuario\\Downloads\\stock_bebidas.xlsx (ruta fija, no se busca 'el mas reciente'; se pisa el mismo nombre cuando el usuario vuelve a descargarlo)",
-    "hojas_usadas": ["OB", "SV", "PR", "TC"],
-    "hojas_ignoradas": ["General", "STOCK", "JA", "AP", "VS", "PAR", "VIC", "Resumen - Stock", "Indicadores", "Stock Min 1994", "Stock Min Center", "Stock Min (KG)", "Venta por bultos", "Bultos por dia", "Dias de piso", "HL", "Capacidad de Almacen", "Areas", "Migrar", "Articulos", "Criticos"],
-    "estructura_por_hoja": "Cada una de las 4 pestañas usadas trae DOS bloques de columnas lado a lado -- 'DISPONIBLE' (A-D) y 'FISICO' (F-I) -- se usa SOLO 'DISPONIBLE', a pedido del usuario. Fila 1 = subtitulo de bloque, fila 2 = encabezados reales, datos desde fila 3.",
+    "_nota": "Cambio 2026-10-14 a pedido del usuario: se reemplazo el archivo manual D:\\01-Usuario\\Downloads\\stock_bebidas.xlsx (pestañas individuales OB/SV/PR/TC) por el archivo compartido de Drive 'Stock Grupo <fecha>.xlsx' (carpeta Tablero, G:\\.shortcut-targets-by-id\\1u_ye8_DxaD-QjUZprdIQaSxi1JVXDP0N\\Tablero -- montada localmente por Google Drive, no requiere el conector MCP), leyendo directo de la pestaña consolidada 'STOCK' en vez de una pestaña por deposito. Son 7 depositos reales: Obera, San Vicente, Puerto Rico, Virasoro, Posadas, Parana y Victoria (CORREGIDO 2026-10-14: la hoja 'STOCK' tiene 10 bloques de columnas, pero Jardin America, Apostoles y Santo Tome son columnas heredadas siempre en cero, no depositos operativos -- confirmado por el usuario contra la hoja 'MERCH' del mismo archivo, que solo lista esos 7). IMPORTANTE: la columna '<Deposito> Disponible' ya viene en BULTOS (confirmado por el usuario, 2026-10-14) -- a diferencia de la fuente anterior, el consolidador YA NO divide por unidades_por_bulto para este valor, lo toma directo como stock_bultos.",
+    "archivo": "carpeta 'Tablero' (config.rutas.stock_bebidas_archivo apunta a la carpeta, no a un archivo fijo): se toma el 'Stock Grupo*.xlsx' mas reciente por fecha de modificacion, porque el nombre trae la fecha y cambia en cada actualizacion.",
+    "hoja_usada": "STOCK",
+    "hojas_ignoradas": ["General", "MERCH", "OB", "SV", "JA", "AP", "VS", "TC", "PAR", "VIC", "Resumen - Stock", "Indicadores", "Stock Min 1994", "Stock Min Center", "Stock Min (KG)", "Venta por bultos", "Bultos por dia", "Dias de piso", "HL", "Capacidad de Almacen", "Areas", "Migrar", "Articulos", "Criticos"],
+    "estructura": "Fila 1 vacia, fila 2 = encabezados reales, datos desde fila 3. Columnas fijas B=Codigo, D=Descripcion. Desde la columna I se repite un bloque de 8 columnas por deposito (MA | <Deposito> Fisico | <Deposito> Disponible | Dias de piso | ABC | Ven Prom | Min | Max). Hay 10 bloques en la hoja, pero solo se leen los 7 que corresponden a depositos reales (lista blanca DEPOSITOS_REALES en excel_stock.py); los otros 3 (Jardin America, Apostoles, Santo Tome) se descartan aunque existan como bloque.",
     "columnas": {
-      "codigo": { "posicion": 1, "letra": "A", "header_original": "Art\u00edculo" },
-      "descripcion": { "posicion": 2, "letra": "B", "header_original": "Descripci\u00f3n Art\u00edculo" },
-      "stock_unidades": { "posicion": 3, "letra": "C", "header_original": "Cantidad" },
-      "deposito": { "origen": "nombre de la pestaña, no una columna", "valores": ["OB", "SV", "PR", "TC"] }
+      "codigo": { "posicion": 2, "letra": "B", "header_original": "C\u00f3digo" },
+      "descripcion": { "posicion": 4, "letra": "D", "header_original": "Descripci\u00f3n" },
+      "grupo": { "posicion": 7, "letra": "G", "header_original": "Retiro", "aviso": "un valor por articulo, no varia por deposito (a diferencia de cluster/ABC). Agregado 2026-10-14 a pedido del usuario, alimenta el filtro 'Grupo' de la web." },
+      "stock_bultos": { "origen": "columna '<Deposito> Disponible' del bloque de cada deposito, ya en bultos" },
+      "venta_promedio_bulto": { "origen": "columna 'Ven Prom' del bloque de cada deposito" },
+      "deposito": {
+        "origen": "nombre del encabezado '<Deposito> Disponible' sin el sufijo ' Disponible' y sin acentos (unicodedata, a pedido del usuario), filtrado contra la lista blanca de 7 depositos reales",
+        "valores_y_columna_disponible": {
+          "Obera": "K", "San Vicente": "S", "Virasoro": "AY", "Puerto Rico": "BG",
+          "Posadas": "BO", "Parana": "BW", "Victoria": "CE"
+        },
+        "bloques_descartados_no_son_depositos_reales": {
+          "Jardin America": "AA", "Apostoles": "AI", "Santo Tome": "AQ"
+        }
+      }
     },
-    "columnas_no_usadas": {
-      "D": "Unids (vacia en la muestra)",
-      "F-I": "bloque FISICO (Articulo/Descripcion/Cantidad/Unids duplicado) -- no se usa, a pedido del usuario",
-      "K-O": "Venta Prom Pedido / Cod / Descripcion / Venta / ABC -- otro dato (venta promedio por pedido), no se usa aca"
+    "columnas_no_usadas_por_bloque": {
+      "MA": "primera columna del bloque, vacia en la muestra",
+      "Fisico": "stock fisico (no disponible) -- no se usa, igual que antes",
+      "Dias de piso / ABC / Min / Max": "no se cargan todavia (quedan para una iteracion siguiente, ver Notas Tablero.txt puntos 1 y 2: Retiro->Grupo con filtro, y ABC por deposito)"
     },
     "fila_encabezado": 2,
     "fila_datos_desde": 3,
-    "filas_totales_muestra_17_09": 833,
-    "codigos_unicos_muestra_17_09": 330,
-    "filas_por_deposito_muestra_17_09": { "OB": 267, "SV": 165, "PR": 167, "TC": 234 },
-    "codigos_en_mas_de_un_deposito_muestra_17_09": 224,
-    "aviso": "Un mismo codigo puede tener una fila por deposito (OB/SV/PR/TC). El consolidador arma una fila por (codigo, deposito); venta 7d/promedio/dias de stock/transito no estan discriminados por deposito, se repite el total del articulo en cada fila."
+    "aviso": "Un mismo codigo tiene una fila por deposito donde aparece con Disponible no nulo (hasta 7 filas por codigo). El consolidador arma una fila por (codigo, deposito); venta 7d (de VENTAS.xlsx, otro catalogo) no esta discriminada por deposito, se repite el total del articulo en cada fila -- dias_stock SI usa el venta_promedio_bulto propio de cada deposito."
   },
 
   "rubros": {

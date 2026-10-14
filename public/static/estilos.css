@@ -532,7 +532,7 @@ body {
   gap: 3px;
 }
 
-.filtro-buscador { flex: 2; }
+.filtro-buscador { flex: 1.5; min-width: 220px; }
 
 .filtro > label {
   font-size: 10px;

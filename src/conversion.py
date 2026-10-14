@@ -2,6 +2,16 @@
 stock (CLAUDE.md secciones 4.5, 5.3, 5.4)."""
 from __future__ import annotations
 
+import unicodedata
+
+
+def sin_acentos(texto: str) -> str:
+    """Quita acentos (NFKD + descarte de marcas combinantes). Usado para
+    nombres de deposito que vienen con tilde en el Excel pero se muestran
+    sin tilde en la web (pedido del usuario, 2026-10-14)."""
+    descompuesto = unicodedata.normalize("NFKD", texto)
+    return "".join(c for c in descompuesto if not unicodedata.combining(c))
+
 
 def normalizar_codigo(valor) -> str:
     """Clave unica de cruce: siempre string, sin espacios, sin decimales

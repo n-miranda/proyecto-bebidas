@@ -14,9 +14,13 @@ import pandas as pd
 class FuenteStock(ABC):
     @abstractmethod
     def leer(self) -> pd.DataFrame:
-        """Columnas: codigo (str), descripcion (str), stock_unidades (float),
-        deposito (str), venta_promedio_bulto (float | None -- puede faltar).
-        Un mismo codigo puede repetirse en mas de una fila si tiene stock en
+        """Columnas: codigo (str), descripcion (str), stock_bultos (float --
+        ya convertido a bultos por la fuente, el consolidador no vuelve a
+        dividir por unidades_por_bulto), deposito (str), venta_promedio_bulto
+        (float | None -- puede faltar), cluster (str | None -- ABC/ranking
+        del articulo en ese deposito, puede faltar), grupo (str | None --
+        categoria del articulo, no varia por deposito, puede faltar). Un
+        mismo codigo puede repetirse en mas de una fila si tiene stock en
         mas de un deposito."""
 
 

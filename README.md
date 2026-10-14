@@ -30,27 +30,31 @@ se ve con solo recargar (Ctrl+F5) — no hace falta reiniciar el proceso.
 
 | Fuente | Origen | Estado |
 |---|---|---|
-| **Stock** | `stock_bebidas.xlsx` (pestañas OB, SV, PR, TC: una por depósito) | **Real de bebidas.** Se toma el bloque "DISPONIBLE" (columnas A-D); el bloque "FÍSICO" no se usa |
-| **Venta promedio por bulto** | Columna K ("Venta Prom Pedido") de esas mismas pestañas, cruzada por la columna L ("Cod") | **Real de bebidas.** Es la base del cálculo de días de stock |
-| **Tránsito** | `TRANSITO\<DEPÓSITO> - Pedidos.xlsx` + `INGRESOS.xlsx` + parsers de Posadas | Por depósito; los parsers de Posadas (Georgalos, La Serenísima, Piamontesa, Timbo, Trigos Argentinos) son de Total Refrigerados |
-| **Novedades** | `TRANSITO\Novedades.xlsx` | Nota libre por artículo (hoy 6) |
+| **Stock** | Carpeta de Drive `Tablero`, archivo `Stock Grupo <fecha>.xlsx` (se toma el más reciente), pestaña `STOCK` | **Real de bebidas.** 7 depósitos reales (Obera, San Vicente, Puerto Rico, Virasoro, Posadas, Parana, Victoria) tomados de la columna "`<Depósito> Disponible`" de cada bloque, ya en **bultos** (no se divide por unidades por bulto) |
+| **Venta promedio por bulto** | Columna "Ven Prom" de cada bloque de depósito, misma hoja `STOCK` | **Real de bebidas.** Es la base del cálculo de días de stock |
+| **Grupo** | Columna "Retiro" (G) de la hoja `STOCK`, un valor por artículo | **Real de bebidas.** Alimenta el filtro y la columna "Grupo" |
+| **Clúster** | Columna "ABC" de cada bloque de depósito, misma hoja `STOCK` | **Real de bebidas.** Vinculado por (código, depósito); alimenta el filtro y la columna "Clúster" |
+| **Tránsito** | Archivos `<N>. <Empresa> - Pedidos.xlsx` de la misma carpeta `Tablero` (1994, Total Center, Kerá Guazú) | Por depósito (columna "Depósito" de la hoja "Base" de cada archivo), cantidad = "Pedido a retirar" en pedidos sin remito. Falta el archivo de **Total Litoral S.A.** (depósitos Paraná y Victoria), que no está en la carpeta todavía |
+| **Novedades** | `TRANSITO\Novedades.xlsx` | Nota libre por artículo |
 | **Ventas** | `VENTAS\VENTAS.xlsx` | Heredado de Total Refrigerados; no comparte códigos con bebidas |
 | **Maestro de productos** | proveedor / rubro / unidades por bulto | Heredado de Total Refrigerados; no comparte códigos con bebidas |
 
-Las rutas salen de `config\config.json` (`rutas.*`). Consecuencias esperables,
-avisadas en la propia web (chip **"N avisos"**):
+Las rutas salen de `config\config.json` (`rutas.*`): `rutas.stock_bebidas_archivo`
+apunta a la carpeta de Drive `Tablero` (montada localmente por Google Drive,
+ruta `G:\.shortcut-targets-by-id\...\Tablero`), usada tanto para el stock como
+para el tránsito por depósito. Mapeo completo de columnas confirmado en
+`config\mapeo_columnas.json`. Consecuencias esperables, avisadas en la propia
+web (chip **"N avisos"**):
 
 - Todos los artículos figuran **SIN CLASIFICAR** (sin proveedor ni rubro) y con
   1 unidad por bulto, porque el maestro no tiene los códigos de bebidas.
 - **"Venta 7d" sale en 0** casi siempre (no hay match de códigos con
   `VENTAS.xlsx`). **No afecta los días de stock**, que usan la venta promedio
-  del propio archivo de stock.
-- El universo de artículos es **únicamente** el de `stock_bebidas.xlsx`: no se
+  propia de la hoja `STOCK`.
+- El universo de artículos es **únicamente** el de `Stock Grupo*.xlsx`: no se
   agregan artículos huérfanos de ventas o tránsito.
-- El filtro **Clúster** está armado pero sin datos (esperando una fuente real).
-- El encabezado dice "833 artículos, 862 sin clasificar": las 862 son
-  *inconsistencias* (359 códigos distintos, algunos con varios motivos, 29 ni
-  están en la tabla), no artículos.
+- Paraná y Victoria tienen poco o nada de tránsito cargado (falta el archivo
+  de pedidos de Total Litoral S.A. en la carpeta Drive).
 
 ## La web
 
@@ -64,10 +68,10 @@ avisadas en la propia web (chip **"N avisos"**):
   Tipografías Poppins (título) e Inter (el resto), solo para este bloque; el
   resto de la página sigue con IBM Plex Sans/Space Grotesk.
 - **Selector de vista** ("Por depósito" / "Resumen por código") y **filtros**
-  (Depósito, Clúster, búsqueda por código/descripción, columnas visibles):
-  van pegados justo arriba de los encabezados de columna de la tabla, no en el
-  encabezado azul. Los filtros son combinables y en vivo; los activos se ven
-  como chips con "Limpiar todo" arriba de las tarjetas.
+  (Depósito, Grupo, Clúster, búsqueda por código/descripción, columnas
+  visibles): van pegados justo arriba de los encabezados de columna de la
+  tabla, no en el encabezado azul. Los filtros son combinables y en vivo; los
+  activos se ven como chips con "Limpiar todo" arriba de las tarjetas.
 - **Tarjetas:** artículos filtrados, riesgo de quiebre, normal y sobrestock.
   Cada una es clickeable y filtra la tabla por estado (si se está en "Resumen
   por código", el click vuelve primero a "Por depósito"). Los textos de
@@ -76,10 +80,10 @@ avisadas en la propia web (chip **"N avisos"**):
   "atención" no tiene tarjeta; su cantidad se ve en el detalle de "Riesgo de
   quiebre" y "sin venta" en el de "Artículos filtrados").
 - **Tabla "Por depósito"**, de una sola hoja (sin paginar), con encabezado fijo
-  y scroll propio. Columnas: estado, código, descripción, depósito, stock
-  (bultos, sin decimales), venta promedio (bultos), días de stock, tránsito
-  (bultos, sin decimales) y días de stock con tránsito. La novedad, si existe,
-  se ve bajo la descripción.
+  y scroll propio. Columnas: estado, código, descripción, depósito, grupo,
+  clúster, stock (bultos, sin decimales), venta promedio (bultos), días de
+  stock, tránsito (bultos, sin decimales) y días de stock con tránsito. La
+  novedad, si existe, se ve bajo la descripción.
 - **Tabla "Resumen por código"**: la misma tabla cambia a una fila por código
   con una columna de stock por depósito (antes era la página aparte
   `/stock-general`, hoy vive acá como una 2ª vista — ver más abajo). El stock
@@ -339,6 +343,9 @@ un archivo local ignorado por git, nunca en el repo.
 
 ## Pendientes conocidos
 
+- Falta el archivo de pedidos de **Total Litoral S.A.** en la carpeta Drive
+  `Tablero` (cubre Paraná y Victoria): esos dos depósitos quedan sin tránsito
+  real hasta que aparezca.
 - Agrupar visualmente los artículos que están en más de un depósito (hoy
   aparecen en filas separadas, una por depósito).
 - Reemplazar el maestro de productos y las ventas por los de bebidas: hoy todo
@@ -353,6 +360,25 @@ un archivo local ignorado por git, nunca en el repo.
   falta mantener el link viejo.
 
 ## Historial de cambios
+
+**2026-10-14**
+- **Stock pasa a la fuente real de Drive:** carpeta `Tablero`
+  (`Stock Grupo <fecha>.xlsx`, pestaña `STOCK`), en vez del archivo manual
+  `stock_bebidas.xlsx`. Son 7 depósitos reales (no 10: la hoja trae 3 bloques
+  heredados — Jardín América, Apóstoles, Santo Tomé — siempre en cero, que se
+  descartan). El stock ya viene en bultos, no se vuelve a dividir por
+  unidades por bulto.
+- **Tránsito por depósito reconstruido** desde los archivos de pedidos por
+  empresa (`1. 1994`, `2. Total Center`, `4. Kerá Guazú - Pedidos.xlsx`) de la
+  misma carpeta Drive, cruzando por la columna "Depósito" de cada fila (antes
+  usaba códigos de 2 letras que habían quedado huérfanos). Cantidad pendiente
+  = "Pedido a retirar" (ya descuenta bajas/ajustes), no "Pedido Original".
+- **Filtro y columna "Clúster"** con datos reales: columna "ABC" de `STOCK`,
+  vinculada por (código, depósito).
+- **Filtro y columna "Grupo"** (nuevo): columna "Retiro" de `STOCK`, un valor
+  por artículo.
+- Publicado en Vercel: `public/` actualizado vía merge de 3 vías desde
+  `src/web/`, `data/snapshot.json` republicado.
 
 **2026-10-01**
 - Config por máquina: `config\config.local.json` (gitignored) pisa claves

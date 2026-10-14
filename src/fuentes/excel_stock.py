@@ -1,28 +1,39 @@
-"""Lectura de la base de stock (CLAUDE.md seccion 4.1, actualizado
-2026-09-17 a pedido del usuario).
+"""Lectura de stock desde la pestaña 'Stock' del archivo compartido de
+Drive 'Stock Grupo <fecha>.xlsx' (carpeta Tablero) -- reemplaza la lectura
+anterior por pestañas individuales de deposito (OB/SV/PR/TC) del archivo
+manual D:\\01-Usuario\\Downloads\\stock_bebidas.xlsx.
 
-Base de stock: un unico archivo manual, D:\\01-Usuario\\Downloads\\
-stock_bebidas.xlsx, con una pestaña por deposito -- OB, SV, PR, TC (siglas
-confirmadas por el usuario, cada pestaña ES un deposito).
+Estructura real relevada y confirmada por el usuario (2026-10-14):
+  - Hoja 'Stock': fila 1 vacia, fila 2 = encabezados reales, datos desde
+    fila 3.
+  - Columnas fijas: B = Codigo, D = Descripcion, G = Retiro.
+  - A partir de la columna I se repite un bloque de 8 columnas por
+    deposito: MA | <Deposito> Fisico | <Deposito> Disponible |
+    Dias de piso | ABC | Ven Prom | Min | Max. La hoja trae 10 bloques,
+    pero solo 7 son depositos operativos reales (confirmado por el
+    usuario, 2026-10-14, contra la hoja 'MERCH' del mismo archivo): Obera,
+    San Vicente, Puerto Rico, Virasoro, Posadas, Parana y Victoria.
+    Jardin America, Apostoles y Santo Tome son columnas heredadas/vacias
+    del archivo, no depositos reales -- se omiten.
+  - Se usan 'Disponible', 'Ven Prom' y 'ABC'. 'Disponible' YA viene en
+    BULTOS (confirmado por el usuario) -- a diferencia de la fuente
+    anterior, no hay que dividir por unidades_por_bulto del maestro; el
+    consolidador toma este valor directo como stock_bultos.
+  - El nombre de deposito que ve la web es el del encabezado sin acentos
+    (ej. 'Oberá' -> 'Obera'), a pedido del usuario (2026-10-14).
+  - 'ABC' (cluster A/B/C/D del propio articulo en ese deposito, segun
+    rotacion) se carga como 'cluster', vinculado por (codigo, deposito) --
+    a pedido del usuario (2026-10-14), alimenta el filtro "Clúster" de la
+    web, que hasta ahora no tenia datos reales.
+  - 'Retiro' (columna G, un valor por articulo -- NO varia por deposito,
+    a diferencia de 'ABC') se carga como 'grupo' -- a pedido del usuario
+    (2026-10-14), alimenta un nuevo filtro "Grupo" en la web.
 
-Cada pestaña trae VARIAS tablas independientes, una al lado de la otra (no
-alineadas por fila -- cada una tiene su propio orden/longitud):
-  - 'DISPONIBLE' (columnas A-D: Articulo, Descripcion Articulo, Cantidad,
-    Unids) -- el stock en si. Se usa SOLO este bloque para stock, a pedido
-    del usuario (hay un bloque 'FISICO' identico al lado, columnas F-I, que
-    NO se usa).
-  - Venta Prom Pedido (columna K) + Cod/Descripcion/Venta/ABC (columnas
-    L-O): un ranking de ventas aparte, con su PROPIA columna de codigo
-    (L, "Cod"). Verificado (2026-09-17): los valores de K difieren por
-    pestaña para un mismo codigo (son datos reales por deposito, no una
-    tabla duplicada) -- pero el codigo de esa fila es el de la columna L,
-    NO el de la columna A (son tablas distintas, no hay que asumir que la
-    fila N de A es el mismo articulo que la fila N de L). A pedido del
-    usuario, esa columna K se carga como 'venta_promedio_bulto' cruzando
-    por (codigo=L, deposito=pestaña) contra las filas de stock.
-
-Estructura de filas: fila 1 = subtitulo de bloque (DISPONIBLE/FISICO), fila
-2 = encabezados reales, datos desde fila 3.
+config.rutas.stock_bebidas_archivo puede apuntar a un archivo puntual o a
+una carpeta (la carpeta de Drive 'Tablero', que recibe un archivo nuevo
+"Stock Grupo <fecha>.xlsx" cada vez que se actualiza): si es una carpeta,
+se toma el mas reciente por fecha de modificacion (misma regla de
+CLAUDE.md 4.1) y se registra en el log cual se uso.
 """
 from __future__ import annotations
 
@@ -32,72 +43,141 @@ from pathlib import Path
 import openpyxl
 import pandas as pd
 
-from src.conversion import normalizar_codigo
+from src.conversion import normalizar_codigo, sin_acentos
 from src.fuentes.base import FuenteStock
 
 logger = logging.getLogger(__name__)
 
-# Pestañas a leer, en el orden en que se procesan (una = un deposito).
-HOJAS_DEPOSITO = ["OB", "SV", "PR", "TC"]
+NOMBRE_HOJA = "STOCK"
+FILA_ENCABEZADO = 2
+FILA_DATOS_DESDE = 3
+COL_CODIGO = 2  # B
+COL_DESCRIPCION = 4  # D
+COL_GRUPO = 7  # G ("Retiro" en el Excel, se muestra como "Grupo" en la web)
+COL_PRIMER_BLOQUE = 9  # I (primera columna 'MA' del bloque de Obera)
+ANCHO_BLOQUE = 8
+CANTIDAD_BLOQUES_EN_LA_HOJA = 10  # hay 10 bloques de columnas, no todos son depositos reales
+OFFSET_DISPONIBLE = 2  # dentro del bloque: MA(0) Fisico(1) Disponible(2)
+OFFSET_ABC = 4  # ... Dias de piso(3) ABC(4)
+OFFSET_VEN_PROM = 5  # ... Ven Prom(5)
+
+# Depositos operativos reales (sin acentos), confirmado contra la hoja
+# 'MERCH' del mismo archivo. Jardin America, Apostoles y Santo Tome
+# aparecen como bloque en 'STOCK' pero siempre en cero -- no son
+# depositos reales, se descartan.
+DEPOSITOS_REALES = {
+    "Obera", "San Vicente", "Puerto Rico", "Virasoro", "Posadas", "Parana", "Victoria",
+}
+
+
+def _resolver_archivo(ruta: Path) -> Path:
+    if ruta.is_dir():
+        candidatos = sorted(
+            ruta.glob("Stock Grupo*.xlsx"), key=lambda p: p.stat().st_mtime, reverse=True
+        )
+        if not candidatos:
+            raise FileNotFoundError(f"No se encontro ningun 'Stock Grupo*.xlsx' en {ruta}")
+        elegido = candidatos[0]
+        logger.info("STOCK: carpeta=%s -> archivo mas reciente=%s", ruta, elegido.name)
+        return elegido
+    return ruta
+
+
+def _detectar_depositos(encabezados: tuple) -> list[tuple[str, int, int, int]]:
+    """Devuelve (nombre_deposito_sin_acentos, idx_disponible_0based,
+    idx_abc_0based, idx_ven_prom_0based) por cada bloque de deposito
+    detectado."""
+    depositos = []
+    for i in range(CANTIDAD_BLOQUES_EN_LA_HOJA):
+        col_inicio = COL_PRIMER_BLOQUE + i * ANCHO_BLOQUE  # 1-based
+        idx_disponible = col_inicio + OFFSET_DISPONIBLE - 1  # 0-based
+        idx_abc = col_inicio + OFFSET_ABC - 1
+        idx_ven_prom = col_inicio + OFFSET_VEN_PROM - 1
+        header = encabezados[idx_disponible] if idx_disponible < len(encabezados) else None
+        if not header or "disponible" not in str(header).lower():
+            logger.warning(
+                "STOCK: columna 'Disponible' esperada en indice %d no coincide (header=%r), se omite ese bloque",
+                idx_disponible, header,
+            )
+            continue
+        nombre = sin_acentos(str(header).replace("Disponible", "").strip())
+        if nombre not in DEPOSITOS_REALES:
+            logger.info(
+                "STOCK: bloque '%s' (indice %d) no es un deposito real, se omite", nombre, idx_disponible,
+            )
+            continue
+        depositos.append((nombre, idx_disponible, idx_abc, idx_ven_prom))
+    return depositos
 
 
 class ExcelStock(FuenteStock):
     def __init__(self, archivo: Path):
         self.archivo = archivo
 
-    def _leer_venta_promedio_bulto(self, ws) -> dict[str, float]:
-        """Columna K (Venta Prom Pedido) cruzada por columna L (Cod) -- ver
-        docstring del modulo, no tiene relacion posicional con la columna A."""
-        mapa: dict[str, float] = {}
-        for fila in ws.iter_rows(min_row=3, min_col=11, max_col=12, values_only=True):
-            venta_prom, codigo_raw = fila
-            if codigo_raw is None or venta_prom is None:
-                continue
-            try:
-                mapa[normalizar_codigo(codigo_raw)] = float(venta_prom)
-            except (ValueError, TypeError):
-                continue
-        return mapa
-
     def leer(self) -> pd.DataFrame:
-        if not self.archivo.exists():
-            raise FileNotFoundError(f"No se encontro el archivo de stock: {self.archivo}")
-        wb = openpyxl.load_workbook(self.archivo, data_only=True, read_only=True)
-        filas = []
-        for nombre_hoja in HOJAS_DEPOSITO:
-            if nombre_hoja not in wb.sheetnames:
-                logger.warning(
-                    "STOCK: no se encontro la pestaña '%s' en %s, se omite",
-                    nombre_hoja, self.archivo.name,
-                )
-                continue
-            ws = wb[nombre_hoja]
-            venta_promedio_bulto = self._leer_venta_promedio_bulto(ws)
-            leidas = 0
-            con_venta_promedio = 0
-            for codigo, descripcion, cantidad, *_resto in ws.iter_rows(min_row=3, max_col=4, values_only=True):
-                if codigo is None:
-                    continue
-                codigo_norm = normalizar_codigo(codigo)
-                vpb = venta_promedio_bulto.get(codigo_norm)
-                if vpb is not None:
-                    con_venta_promedio += 1
-                filas.append({
-                    "codigo": codigo_norm,
-                    "descripcion": (descripcion or "").strip() if isinstance(descripcion, str) else descripcion,
-                    "stock_unidades": float(cantidad) if cantidad is not None else 0.0,
-                    "deposito": nombre_hoja,
-                    "venta_promedio_bulto": vpb,
-                })
-                leidas += 1
-            logger.info(
-                "STOCK: pestaña=%s filas_leidas=%d con_venta_promedio_bulto=%d",
-                nombre_hoja, leidas, con_venta_promedio,
+        archivo = _resolver_archivo(self.archivo)
+        if not archivo.exists():
+            raise FileNotFoundError(f"No se encontro el archivo de stock: {archivo}")
+        wb = openpyxl.load_workbook(archivo, data_only=True, read_only=True)
+        nombre_hoja = next((h for h in wb.sheetnames if h.strip().upper() == NOMBRE_HOJA), None)
+        if nombre_hoja is None:
+            raise FileNotFoundError(f"El archivo {archivo.name} no tiene la pestaña '{NOMBRE_HOJA}'")
+        ws = wb[nombre_hoja]
+
+        encabezados = next(
+            ws.iter_rows(min_row=FILA_ENCABEZADO, max_row=FILA_ENCABEZADO, values_only=True)
+        )
+        depositos = _detectar_depositos(encabezados)
+        if not depositos:
+            raise FileNotFoundError(
+                f"No se encontraron columnas 'Disponible' por deposito en la pestaña "
+                f"'{NOMBRE_HOJA}' de {archivo.name}"
             )
+
+        filas = []
+        for fila in ws.iter_rows(min_row=FILA_DATOS_DESDE, values_only=True):
+            codigo_raw = fila[COL_CODIGO - 1] if len(fila) >= COL_CODIGO else None
+            if codigo_raw is None:
+                continue
+            codigo = normalizar_codigo(codigo_raw)
+            descripcion = fila[COL_DESCRIPCION - 1] if len(fila) >= COL_DESCRIPCION else None
+            descripcion = descripcion.strip() if isinstance(descripcion, str) else descripcion
+            grupo_raw = fila[COL_GRUPO - 1] if len(fila) >= COL_GRUPO else None
+            grupo = str(grupo_raw).strip() if isinstance(grupo_raw, str) and grupo_raw.strip() else None
+            for nombre_deposito, idx_disponible, idx_abc, idx_ven_prom in depositos:
+                disponible = fila[idx_disponible] if idx_disponible < len(fila) else None
+                if disponible is None:
+                    continue
+                try:
+                    stock_bultos = float(disponible)
+                except (TypeError, ValueError):
+                    continue
+                ven_prom = fila[idx_ven_prom] if idx_ven_prom < len(fila) else None
+                try:
+                    venta_promedio_bulto = float(ven_prom) if ven_prom is not None else None
+                except (TypeError, ValueError):
+                    venta_promedio_bulto = None
+                abc = fila[idx_abc] if idx_abc < len(fila) else None
+                cluster = str(abc).strip() if isinstance(abc, str) and abc.strip() else None
+                filas.append({
+                    "codigo": codigo,
+                    "descripcion": descripcion,
+                    "stock_bultos": stock_bultos,
+                    "deposito": nombre_deposito,
+                    "venta_promedio_bulto": venta_promedio_bulto,
+                    "cluster": cluster,
+                    "grupo": grupo,
+                })
         wb.close()
-        df = pd.DataFrame(filas, columns=["codigo", "descripcion", "stock_unidades", "deposito", "venta_promedio_bulto"])
+
+        df = pd.DataFrame(
+            filas,
+            columns=["codigo", "descripcion", "stock_bultos", "deposito", "venta_promedio_bulto", "cluster", "grupo"],
+        )
         logger.info(
-            "STOCK: archivo=%s filas_totales=%d depositos=%s",
-            self.archivo.name, len(df), sorted(df["deposito"].unique()) if not df.empty else [],
+            "STOCK: archivo=%s filas_totales=%d codigos_unicos=%d depositos=%s",
+            archivo.name, len(df),
+            df["codigo"].nunique() if not df.empty else 0,
+            sorted(df["deposito"].unique()) if not df.empty else [],
         )
         return df
