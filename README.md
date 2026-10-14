@@ -56,11 +56,12 @@ web (chip **"N avisos"**):
 - Paraná y Victoria tienen poco o nada de tránsito cargado (falta el archivo
   de pedidos de Total Litoral S.A. en la carpeta Drive).
 - **El nombre del archivo de stock cambia todos los días** (`Stock Grupo
-  <fecha>.xlsx`): la app no asume un nombre fijo, busca el más reciente por
-  fecha de modificación dentro de la carpeta `Tablero`. Si ese archivo no es
-  de hoy (nadie subió uno nuevo, o la fecha del nombre no coincide con la
-  fecha real de modificación — ya pasó una vez), aparece un aviso explícito
-  en el chip de la web en vez de mostrar el dato viejo sin avisar.
+  <fecha>.xlsx`): la app no asume un nombre fijo, busca el más reciente
+  **por la fecha que trae el propio nombre** dentro de la carpeta `Tablero`
+  (no por fecha de modificación: esa siempre queda un día antes, porque el
+  archivo se prepara la tarde anterior — es el flujo normal). Si la fecha del
+  nombre no es la de hoy, aparece un aviso explícito en el chip de la web en
+  vez de mostrar el dato viejo sin avisar.
 
 ## La web
 
@@ -385,12 +386,18 @@ un archivo local ignorado por git, nunca en el repo.
   por artículo.
 - Publicado en Vercel: `public/` actualizado vía merge de 3 vías desde
   `src/web/`, `data/snapshot.json` republicado.
-- **Aviso de archivo de stock desactualizado:** si el "Stock Grupo*.xlsx" más
-  reciente de la carpeta Drive no es de hoy (por fecha de modificación, no
-  por el nombre), aparece un aviso visible en la web en vez de mostrar el
-  dato viejo en silencio. Detectado en la práctica: el archivo
-  `Stock Grupo 14-10-26.xlsx` tenía fecha de modificación 13/10 — el nombre
-  por sí solo no garantiza que el dato sea del día que dice.
+- **El archivo "más reciente" se elige por la fecha del propio nombre**
+  (`Stock Grupo <fecha>.xlsx`), no por la fecha de modificación del sistema
+  de archivos. Confirmado por el usuario: la fecha de modificación siempre
+  queda un día antes de la del nombre (el archivo se prepara la tarde/noche
+  anterior) — es el flujo normal, no un error de carga, así que la fecha de
+  modificación no sirve para saber si el dato es "de hoy". Si ningún archivo
+  trae una fecha reconocible en el nombre, se cae a fecha de modificación
+  como respaldo (con warning en el log).
+- **Aviso de archivo de stock desactualizado:** si la fecha del nombre del
+  "Stock Grupo*.xlsx" elegido no coincide con la fecha de hoy, aparece un
+  aviso visible en la web en vez de mostrar el dato viejo en silencio (por
+  ejemplo, si todavía no se subió el archivo del día).
 
 **2026-10-01**
 - Config por máquina: `config\config.local.json` (gitignored) pisa claves

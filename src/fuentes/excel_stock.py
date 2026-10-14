@@ -32,12 +32,23 @@ Estructura real relevada y confirmada por el usuario (2026-10-14):
 config.rutas.stock_bebidas_archivo puede apuntar a un archivo puntual o a
 una carpeta (la carpeta de Drive 'Tablero', que recibe un archivo nuevo
 "Stock Grupo <fecha>.xlsx" cada vez que se actualiza): si es una carpeta,
-se toma el mas reciente por fecha de modificacion (misma regla de
-CLAUDE.md 4.1) y se registra en el log cual se uso.
+se toma el mas reciente **segun la fecha del propio nombre del archivo**
+(no la fecha de modificacion del sistema de archivos) y se registra en el
+log cual se uso.
+
+IMPORTANTE (confirmado por el usuario, 2026-10-14): la fecha de
+modificacion del archivo SIEMPRE queda un dia antes de la fecha que dice
+el nombre -- es el flujo normal de trabajo (se prepara a la tarde/noche
+para el dia siguiente), no un error de carga. Por eso tanto la eleccion
+del archivo mas reciente como el aviso de "no es de hoy" se basan en la
+fecha que trae el propio nombre del archivo, parseada con
+_fecha_desde_nombre(). Si el nombre no trae una fecha reconocible, se cae
+a la fecha de modificacion como respaldo (con un warning en el log).
 """
 from __future__ import annotations
 
 import logging
+import re
 from datetime import date
 from pathlib import Path
 
@@ -71,17 +82,52 @@ DEPOSITOS_REALES = {
 }
 
 
+# "Stock Grupo 14-10-26.xlsx" -> DD-MM-AA (dia-mes-año de 2 digitos).
+PATRON_FECHA_NOMBRE = re.compile(r"(\d{1,2})-(\d{1,2})-(\d{2,4})")
+
+
+def _fecha_desde_nombre(nombre_archivo: str) -> date | None:
+    """Extrae la fecha DD-MM-AA del nombre ('Stock Grupo 14-10-26.xlsx' ->
+    2026-10-14). None si el nombre no trae un patron de fecha reconocible
+    o la fecha no es valida (ej. 32-13-26)."""
+    m = PATRON_FECHA_NOMBRE.search(nombre_archivo)
+    if not m:
+        return None
+    dia, mes, anio = (int(g) for g in m.groups())
+    if anio < 100:
+        anio += 2000
+    try:
+        return date(anio, mes, dia)
+    except ValueError:
+        return None
+
+
 def _resolver_archivo(ruta: Path) -> Path:
-    if ruta.is_dir():
-        candidatos = sorted(
-            ruta.glob("Stock Grupo*.xlsx"), key=lambda p: p.stat().st_mtime, reverse=True
+    if not ruta.is_dir():
+        return ruta
+    candidatos = list(ruta.glob("Stock Grupo*.xlsx"))
+    if not candidatos:
+        raise FileNotFoundError(f"No se encontro ningun 'Stock Grupo*.xlsx' en {ruta}")
+    con_fecha = [(c, _fecha_desde_nombre(c.name)) for c in candidatos]
+    sin_fecha_en_nombre = [c for c, f in con_fecha if f is None]
+    if sin_fecha_en_nombre:
+        logger.warning(
+            "STOCK: %d archivo(s) sin fecha reconocible en el nombre, se ordenan por "
+            "fecha de modificacion como respaldo: %s",
+            len(sin_fecha_en_nombre), [c.name for c in sin_fecha_en_nombre],
         )
-        if not candidatos:
-            raise FileNotFoundError(f"No se encontro ningun 'Stock Grupo*.xlsx' en {ruta}")
-        elegido = candidatos[0]
-        logger.info("STOCK: carpeta=%s -> archivo mas reciente=%s", ruta, elegido.name)
-        return elegido
-    return ruta
+    # Se prioriza la fecha del nombre (mas confiable segun el usuario -- la
+    # fecha de modificacion del archivo siempre queda un dia antes, porque se
+    # prepara la tarde anterior); fecha de modificacion solo como desempate o
+    # respaldo para archivos sin fecha reconocible en el nombre.
+    elegido, fecha_nombre = max(
+        con_fecha, key=lambda par: (par[1] or date.min, par[0].stat().st_mtime)
+    )
+    logger.info(
+        "STOCK: carpeta=%s -> archivo elegido=%s (fecha del nombre=%s)",
+        ruta, elegido.name, fecha_nombre.isoformat() if fecha_nombre else "sin fecha, se uso mtime",
+    )
+    return elegido
 
 
 def _detectar_depositos(encabezados: tuple) -> list[tuple[str, int, int, int]]:
@@ -127,7 +173,9 @@ class ExcelStock(FuenteStock):
         if not archivo.exists():
             raise FileNotFoundError(f"No se encontro el archivo de stock: {archivo}")
         self.archivo_usado = archivo
-        self.fecha_archivo_usado = date.fromtimestamp(archivo.stat().st_mtime)
+        # Fecha del propio nombre del archivo, no de modificacion del
+        # sistema de archivos -- ver nota en el docstring del modulo.
+        self.fecha_archivo_usado = _fecha_desde_nombre(archivo.name) or date.fromtimestamp(archivo.stat().st_mtime)
         wb = openpyxl.load_workbook(archivo, data_only=True, read_only=True)
         nombre_hoja = next((h for h in wb.sheetnames if h.strip().upper() == NOMBRE_HOJA), None)
         if nombre_hoja is None:
