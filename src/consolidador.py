@@ -105,7 +105,9 @@ def consolidar(config: Config, fecha_referencia: date | None = None) -> Resultad
     # excel_pedidos_deposito.py, 2026-10-14) -- reemplaza la carpeta local
     # TRANSITO\<OB/SV/PR/TC> - Pedidos.xlsx, con codigos de deposito que ya
     # no existen.
-    pedidos_deposito_df = TransitoPedidosDeposito(config.rutas.stock_bebidas_archivo).leer()
+    pedidos_deposito_df = TransitoPedidosDeposito(
+        config.rutas.stock_bebidas_archivo, carpeta_cache=config.rutas.salida
+    ).leer()
 
     ventas_ventana = ventas_df[ventas_df["fecha"].isin(dias_venta)] if not ventas_df.empty else ventas_df
     ventas_agg = (

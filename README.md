@@ -368,6 +368,14 @@ un archivo local ignorado por git, nunca en el repo.
 
 ## Historial de cambios
 
+**2026-10-15**
+- **Cache de los archivos de pedidos por empresa** (`salida\cache_pedidos_tablero.json`,
+  gitignored): cada archivo (~1 MB) se procesaba entero en cada actualización
+  aunque no hubiera cambiado. Ahora se guarda por archivo su `(mtime, tamaño)`
+  y las filas ya parseadas; si en la próxima corrida coinciden, se reusan sin
+  volver a abrir el `.xlsx`. Confirmado: con los 3 archivos sin cambios, la
+  segunda corrida da "0 archivos reprocesados, 3 sin cambios".
+
 **2026-10-14**
 - **Stock pasa a la fuente real de Drive:** carpeta `Tablero`
   (`Stock Grupo <fecha>.xlsx`, pestaña `STOCK`), en vez del archivo manual
