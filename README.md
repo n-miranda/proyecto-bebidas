@@ -34,7 +34,7 @@ se ve con solo recargar (Ctrl+F5) — no hace falta reiniciar el proceso.
 | **Venta promedio por bulto** | Columna "Ven Prom" de cada bloque de depósito, misma hoja `STOCK` | **Real de bebidas.** Es la base del cálculo de días de stock |
 | **Grupo** | Columna "Retiro" (G) de la hoja `STOCK`, un valor por artículo | **Real de bebidas.** Alimenta el filtro y la columna "Grupo" |
 | **Clúster** | Columna "ABC" de cada bloque de depósito, misma hoja `STOCK` | **Real de bebidas.** Vinculado por (código, depósito); alimenta el filtro y la columna "Clúster" |
-| **Tránsito** | Archivos `<N>. <Empresa> - Pedidos.xlsx` de la misma carpeta `Tablero` (1994, Total Center, Kerá Guazú) | Por depósito (columna "Depósito" de la hoja "Base" de cada archivo), cantidad = "Pedido a retirar" en pedidos sin remito. Falta el archivo de **Total Litoral S.A.** (depósitos Paraná y Victoria), que no está en la carpeta todavía |
+| **Tránsito** | Archivos `<N>. <Empresa> - Pedidos.xlsx` de la misma carpeta `Tablero` (1994, Total Center, Kerá Guazú) | Por depósito (columna "Depósito" de la hoja "Base" de cada archivo), cuenta solo si la columna D (Remito) está vacía **y** la columna Q ("Pedido a retirar") es mayor a 0; cantidad = Q. Falta el archivo de **Total Litoral S.A.** (depósitos Paraná y Victoria), que no está en la carpeta todavía |
 | **Novedades** | `TRANSITO\Novedades.xlsx` | Nota libre por artículo |
 | **Ventas** | `VENTAS\VENTAS.xlsx` | Heredado de Total Refrigerados; no comparte códigos con bebidas |
 | **Maestro de productos** | proveedor / rubro / unidades por bulto | Heredado de Total Refrigerados; no comparte códigos con bebidas |

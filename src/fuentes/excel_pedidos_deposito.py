@@ -13,10 +13,13 @@ columna 'Depósito' de la pestaña 'Base'. Se filtra contra la misma lista
 blanca de 7 depositos reales que usa excel_stock.py (DEPOSITOS_REALES).
 
 Pestaña "Base" (busqueda case-insensitive del nombre): columnas por
-posicion D=Remito, G=Depósito, I=Cod., Q=Pedido a retirar (K=Pedido
-Original (Bultos) como respaldo si Q viene vacia -- Q ya descuenta Baja/
-Agregado/Ajuste CMQ, es la cantidad real pendiente, mas precisa que K).
-Un pedido sin remito todavia (columna D vacia) esta pendiente de recibir.
+posicion D=Remito, G=Depósito, I=Cod., Q=Pedido a retirar (Q ya descuenta
+Baja/Agregado/Ajuste CMQ/bloqueos, es la cantidad real pendiente).
+CRITERIO (ajustado 2026-10-19 a pedido de los operadores): una fila es
+transito solo si la columna D (Remito) esta vacia Y la columna Q es mayor
+a 0. Ya NO se usa K=Pedido Original como respaldo cuando Q viene vacia:
+Q vacia o <= 0 significa que no hay nada a retirar (ej. pedido bloqueado
+por N/D, o ajustado a 0) y no suma transito.
 Si el remito ya tiene numero, el pedido ya se desapcho/facturo y no cuenta
 como transito pendiente (se omite, tal como pidio el usuario en la fuente
 anterior).
@@ -51,10 +54,12 @@ logger = logging.getLogger(__name__)
 COL_REMITO = 3  # D (0-based)
 COL_DEPOSITO = 6  # G
 COL_CODIGO = 8  # I
-COL_PEDIDO_ORIGINAL = 10  # K
 COL_PEDIDO_A_RETIRAR = 16  # Q
 
 NOMBRE_CACHE = "cache_pedidos_tablero.json"
+# Subir este numero cada vez que cambie el criterio de parseo: invalida las
+# filas cacheadas aunque el archivo no haya cambiado.
+VERSION_CRITERIO = 2  # 2 = solo D vacia y Q > 0 (2026-10-19)
 
 
 class TransitoPedidosDeposito:
@@ -113,14 +118,12 @@ class TransitoPedidosDeposito:
             if remito is not None and str(remito).strip() != "":
                 continue  # ya tiene remito -> ya se despacho, no es transito pendiente
             cantidad = fila[COL_PEDIDO_A_RETIRAR] if len(fila) > COL_PEDIDO_A_RETIRAR else None
-            if cantidad is None:
-                cantidad = fila[COL_PEDIDO_ORIGINAL] if len(fila) > COL_PEDIDO_ORIGINAL else None
-            if cantidad is None:
-                continue
             try:
                 cantidad = float(cantidad)
             except (TypeError, ValueError):
-                continue
+                continue  # Q vacia o no numerica -> nada a retirar
+            if cantidad <= 0:
+                continue  # Q en 0 (bloqueado/ajustado) -> no es transito
             filas_archivo.append({
                 "codigo": normalizar_codigo(codigo_raw),
                 "deposito": deposito,
@@ -148,9 +151,9 @@ class TransitoPedidosDeposito:
 
         for archivo in self._archivos():
             st = archivo.stat()
-            huella = {"mtime": st.st_mtime, "size": st.st_size}
+            huella = {"mtime": st.st_mtime, "size": st.st_size, "version": VERSION_CRITERIO}
             entrada_previa = cache.get(archivo.name)
-            if entrada_previa and entrada_previa.get("mtime") == huella["mtime"] and entrada_previa.get("size") == huella["size"]:
+            if entrada_previa and all(entrada_previa.get(k) == v for k, v in huella.items()):
                 filas_archivo = entrada_previa["filas"]
                 reusados += 1
                 logger.info("PEDIDOS: archivo=%s sin cambios, se reusa el cache (%d filas)", archivo.name, len(filas_archivo))
